@@ -23,7 +23,7 @@ using NzbDrone.Core.Parser;
 
 namespace NzbDrone.Core.MetadataSource.SkyHook
 {
-    public class SkyHookProxy : IProvideMovieInfo, ISearchForNewMovie
+    public class SkyHookProxy
     {
         private readonly IHttpClient _httpClient;
         private readonly Logger _logger;
