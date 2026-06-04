@@ -6,11 +6,11 @@ namespace NzbDrone.Core.Organizer
     {
         public static NamingConfig Default => new NamingConfig
         {
-            RenameMovies = false,
+            RenameMovies = true,
             ReplaceIllegalCharacters = true,
             ColonReplacementFormat = ColonReplacementFormat.Smart,
-            MovieFolderFormat = "{Movie Title} ({Release Year})",
-            StandardMovieFormat = "{Movie Title} ({Release Year}) {Quality Full}",
+            MovieFolderFormat = "{Movie CleanTitle}",
+            StandardMovieFormat = "{Movie CleanTitle}",
         };
 
         public bool RenameMovies { get; set; }
