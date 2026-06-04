@@ -1880,7 +1880,7 @@
   "System": "System",
   "SystemTimeHealthCheckMessage": "System time is off by more than 1 day. Scheduled tasks may not run correctly until the time is corrected",
   "TMDBId": "TMDb Id",
-  "TMDb": "TMDb",
+  "TMDb": "MetaTube",
   "Table": "Table",
   "TableColumns": "Columns",
   "TableColumnsHelpText": "Choose which columns are visible and which order they appear in",

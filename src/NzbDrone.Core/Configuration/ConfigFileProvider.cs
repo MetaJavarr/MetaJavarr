@@ -60,6 +60,8 @@ namespace NzbDrone.Core.Configuration
         string SyslogLevel { get; }
         bool LogDbEnabled { get; }
         string Theme { get; }
+        string MetaTubeUrl { get; }
+        string MetaTubeToken { get; }
         string PostgresHost { get; }
         int PostgresPort { get; }
         string PostgresUser { get; }
@@ -247,6 +249,28 @@ namespace NzbDrone.Core.Configuration
                 : GetValueEnum("ConsoleLogFormat", ConsoleLogFormat.Standard, false);
 
         public string Theme => _appOptions.Theme ?? GetValue("Theme", "auto", persist: false);
+
+        public string MetaTubeUrl
+        {
+            get
+            {
+                const string defaultValue = "http://metatube.metatube.svc.cluster.local/v1";
+                var value = GetValue("MetaTubeUrl", defaultValue);
+
+                return string.IsNullOrWhiteSpace(value) ? defaultValue : value.TrimEnd('/');
+            }
+        }
+
+        public string MetaTubeToken
+        {
+            get
+            {
+                var value = GetValue("MetaTubeToken", string.Empty);
+
+                return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+            }
+        }
+
         public string PostgresHost => _postgresOptions?.Host ?? GetValue("PostgresHost", string.Empty, persist: false);
         public string PostgresUser => _postgresOptions?.User ?? GetValue("PostgresUser", string.Empty, persist: false);
         public string PostgresPassword => _postgresOptions?.Password ?? GetValue("PostgresPassword", string.Empty, persist: false);

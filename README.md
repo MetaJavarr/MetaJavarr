@@ -1,4 +1,6 @@
-# Radarr
+# MetaJavarr
+
+MetaJavarr is a Radarr fork for JAV libraries. It uses MetaTube as the only metadata provider, supports actress-follow import lists, integrates with Prowlarr and qBittorrent, and imports media into Jellyfin-compatible movie libraries.
 
 [![Build Status](https://dev.azure.com/Radarr/Radarr/_apis/build/status/Radarr.Radarr?branchName=develop)](https://dev.azure.com/Radarr/Radarr/_build/latest?definitionId=1&branchName=develop)
 [![Translation status](https://translate.servarr.com/widget/servarr/radarr/svg-badge.svg)](https://translate.servarr.com/engage/servarr/?utm_source=widget)
@@ -7,9 +9,6 @@
 [![Backers on Open Collective](https://opencollective.com/Radarr/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/Radarr/sponsors/badge.svg)](#sponsors)
 [![Mega Sponsors on Open Collective](https://opencollective.com/Radarr/megasponsors/badge.svg)](#mega-sponsors)
-
-Radarr is a movie collection manager for Usenet and BitTorrent users. It can monitor multiple RSS feeds for new movies and will interface with clients and indexers to grab, sort, and rename them. It can also be configured to automatically upgrade the quality of existing files in the library when a better quality format becomes available.
-Note that only one type of a given movie is supported. If you want both a 4k version and 1080p version of a given movie you will need multiple instances.
 
 ## Major Features Include
 
