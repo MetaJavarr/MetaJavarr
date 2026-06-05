@@ -30,8 +30,8 @@ namespace NzbDrone.Host
 {
     public static class Bootstrap
     {
-        private static readonly Logger Logger = NzbDroneLogger.GetLogger(typeof(Bootstrap));
         private const string ConfigSection = "MetaJavarr";
+        private static readonly Logger Logger = NzbDroneLogger.GetLogger(typeof(Bootstrap));
 
         public static readonly List<string> ASSEMBLIES = new List<string>
         {
