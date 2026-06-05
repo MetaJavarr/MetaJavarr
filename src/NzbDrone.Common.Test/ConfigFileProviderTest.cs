@@ -65,6 +65,10 @@ namespace NzbDrone.Common.Test
             Mocker.GetMock<IOptions<UpdateOptions>>()
                 .Setup(v => v.Value)
                 .Returns(new UpdateOptions());
+
+            Mocker.GetMock<IOptions<MetaTubeOptions>>()
+                .Setup(v => v.Value)
+                .Returns(new MetaTubeOptions());
         }
 
         [Test]
@@ -159,6 +163,26 @@ namespace NzbDrone.Common.Test
             var result = Subject.AuthenticationMethod;
 
             result.Should().Be(AuthenticationType.None);
+        }
+
+        [Test]
+        public void should_read_metatube_url_from_options()
+        {
+            Mocker.GetMock<IOptions<MetaTubeOptions>>()
+                .Setup(v => v.Value)
+                .Returns(new MetaTubeOptions { Url = "https://metatube.example/v1/" });
+
+            Subject.MetaTubeUrl.Should().Be("https://metatube.example/v1");
+        }
+
+        [Test]
+        public void should_read_metatube_token_from_options()
+        {
+            Mocker.GetMock<IOptions<MetaTubeOptions>>()
+                .Setup(v => v.Value)
+                .Returns(new MetaTubeOptions { Token = " secret-token " });
+
+            Subject.MetaTubeToken.Should().Be("secret-token");
         }
 
         [Test]

@@ -37,6 +37,7 @@ namespace NzbDrone.Common.Test
             container.RegisterInstance(new Mock<IOptions<PostgresOptions>>().Object);
             container.RegisterInstance(new Mock<IOptions<AppOptions>>().Object);
             container.RegisterInstance(new Mock<IOptions<AuthOptions>>().Object);
+            container.RegisterInstance(new Mock<IOptions<MetaTubeOptions>>().Object);
             container.RegisterInstance(new Mock<IOptions<ServerOptions>>().Object);
             container.RegisterInstance(new Mock<IOptions<LogOptions>>().Object);
             container.RegisterInstance(new Mock<IOptions<UpdateOptions>>().Object);

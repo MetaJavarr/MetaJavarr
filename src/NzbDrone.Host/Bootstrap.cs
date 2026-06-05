@@ -195,6 +195,7 @@ namespace NzbDrone.Host
             services.Configure<PostgresOptions>(config.GetSection($"{ConfigSection}:Postgres"));
             services.Configure<AppOptions>(config.GetSection($"{ConfigSection}:App"));
             services.Configure<AuthOptions>(config.GetSection($"{ConfigSection}:Auth"));
+            services.Configure<MetaTubeOptions>(config.GetSection($"{ConfigSection}:MetaTube"));
             services.Configure<ServerOptions>(config.GetSection($"{ConfigSection}:Server"));
             services.Configure<LogOptions>(config.GetSection($"{ConfigSection}:Log"));
             services.Configure<UpdateOptions>(config.GetSection($"{ConfigSection}:Update"));

@@ -19,6 +19,9 @@ namespace NzbDrone.App.Test
         {
             Environment.SetEnvironmentVariable("METAJAVARR__AUTH__METHOD", null);
             Environment.SetEnvironmentVariable("RADARR__AUTH__METHOD", null);
+            Environment.SetEnvironmentVariable("METAJAVARR__METATUBE__URL", null);
+            Environment.SetEnvironmentVariable("METAJAVARR__METATUBE__TOKEN", null);
+            Environment.SetEnvironmentVariable("RADARR__METATUBE__TOKEN", null);
         }
 
         [Test]
@@ -43,7 +46,36 @@ namespace NzbDrone.App.Test
                 .BeNull();
         }
 
+        [Test]
+        public void should_bind_metatube_options_from_metajavarr_environment_section()
+        {
+            Environment.SetEnvironmentVariable("METAJAVARR__METATUBE__URL", "https://metatube.example/v1");
+            Environment.SetEnvironmentVariable("METAJAVARR__METATUBE__TOKEN", "secret-token");
+
+            var options = GetOptions<MetaTubeOptions>();
+
+            options.Url.Should().Be("https://metatube.example/v1");
+            options.Token.Should().Be("secret-token");
+        }
+
+        [Test]
+        public void should_not_bind_metatube_options_from_radarr_environment_section()
+        {
+            Environment.SetEnvironmentVariable("RADARR__METATUBE__TOKEN", "secret-token");
+
+            GetOptions<MetaTubeOptions>()
+                .Token
+                .Should()
+                .BeNull();
+        }
+
         private static AuthOptions GetAuthOptions()
+        {
+            return GetOptions<AuthOptions>();
+        }
+
+        private static TOptions GetOptions<TOptions>()
+            where TOptions : class
         {
             var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
@@ -53,7 +85,7 @@ namespace NzbDrone.App.Test
             ConfigureBootstrapOptions(services, config);
 
             return services.BuildServiceProvider()
-                .GetRequiredService<IOptions<AuthOptions>>()
+                .GetRequiredService<IOptions<TOptions>>()
                 .Value;
         }
 

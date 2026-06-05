@@ -83,6 +83,7 @@ namespace NzbDrone.Core.Configuration
         private readonly PostgresOptions _postgresOptions;
         private readonly AuthOptions _authOptions;
         private readonly AppOptions _appOptions;
+        private readonly MetaTubeOptions _metaTubeOptions;
         private readonly ServerOptions _serverOptions;
         private readonly UpdateOptions _updateOptions;
         private readonly LogOptions _logOptions;
@@ -99,6 +100,7 @@ namespace NzbDrone.Core.Configuration
                                   IOptions<PostgresOptions> postgresOptions,
                                   IOptions<AuthOptions> authOptions,
                                   IOptions<AppOptions> appOptions,
+                                  IOptions<MetaTubeOptions> metaTubeOptions,
                                   IOptions<ServerOptions> serverOptions,
                                   IOptions<UpdateOptions> updateOptions,
                                   IOptions<LogOptions> logOptions)
@@ -110,6 +112,7 @@ namespace NzbDrone.Core.Configuration
             _postgresOptions = postgresOptions.Value;
             _authOptions = authOptions.Value;
             _appOptions = appOptions.Value;
+            _metaTubeOptions = metaTubeOptions.Value;
             _serverOptions = serverOptions.Value;
             _updateOptions = updateOptions.Value;
             _logOptions = logOptions.Value;
@@ -255,7 +258,7 @@ namespace NzbDrone.Core.Configuration
             get
             {
                 const string defaultValue = "http://metatube.metatube.svc.cluster.local/v1";
-                var value = GetValue("MetaTubeUrl", defaultValue);
+                var value = _metaTubeOptions.Url;
 
                 return string.IsNullOrWhiteSpace(value) ? defaultValue : value.TrimEnd('/');
             }
@@ -265,7 +268,7 @@ namespace NzbDrone.Core.Configuration
         {
             get
             {
-                var value = GetValue("MetaTubeToken", string.Empty);
+                var value = _metaTubeOptions.Token;
 
                 return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
             }
