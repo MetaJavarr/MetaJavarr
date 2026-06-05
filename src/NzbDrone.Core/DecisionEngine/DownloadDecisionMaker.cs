@@ -78,6 +78,11 @@ namespace NzbDrone.Core.DecisionEngine
                 {
                     var parsedMovieInfo = Parser.Parser.ParseMovieTitle(report.Title);
 
+                    if (parsedMovieInfo == null && IsNumberSearchResult(report, searchCriteria))
+                    {
+                        parsedMovieInfo = GetParsedMovieInfoFromNumberSearch(report, searchCriteria);
+                    }
+
                     if (parsedMovieInfo != null && !parsedMovieInfo.PrimaryMovieTitle.IsNullOrWhiteSpace())
                     {
                         var remoteMovie = _parsingService.Map(parsedMovieInfo, report.ImdbId.ToString(), report.TmdbId, searchCriteria);
@@ -214,6 +219,31 @@ namespace NzbDrone.Core.DecisionEngine
             }
 
             return null;
+        }
+
+        private static bool IsNumberSearchResult(ReleaseInfo report, SearchCriteriaBase searchCriteria)
+        {
+            if (searchCriteria?.IsMovieNumberSearch != true || searchCriteria.SceneTitles == null)
+            {
+                return false;
+            }
+
+            return searchCriteria.SceneTitles.Any(sceneTitle =>
+                sceneTitle.IsNotNullOrWhiteSpace() &&
+                (report.Title ?? string.Empty).IndexOf(sceneTitle, StringComparison.InvariantCultureIgnoreCase) >= 0);
+        }
+
+        private static ParsedMovieInfo GetParsedMovieInfoFromNumberSearch(ReleaseInfo report, SearchCriteriaBase searchCriteria)
+        {
+            return new ParsedMovieInfo
+            {
+                MovieTitles = new List<string> { searchCriteria.Movie.Title },
+                OriginalTitle = report.Title,
+                ReleaseTitle = report.Title,
+                SimpleReleaseTitle = report.Title.SimplifyReleaseTitle(),
+                Languages = LanguageParser.ParseLanguages(report.Title),
+                Quality = QualityParser.ParseQuality(report.Title)
+            };
         }
     }
 }

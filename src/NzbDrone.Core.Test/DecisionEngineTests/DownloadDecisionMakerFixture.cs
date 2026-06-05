@@ -148,6 +148,40 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
         }
 
         [Test]
+        public void should_map_unparsable_number_search_release_when_title_contains_scene_title()
+        {
+            GivenSpecifications(_pass1);
+            _reports[0].Title = "+++ FC2-PPV-1517552 えりかちゃん第２弾！！手コキからのフェラごっくん！";
+
+            var movie = new Movie
+            {
+                Title = "FC2-1517552 えりかちゃん第２弾！！手コキからのフェラごっくん！"
+            };
+
+            movie.MovieMetadata.Value.Number = "FC2-1517552";
+
+            var searchCriteria = new MovieSearchCriteria
+            {
+                Movie = movie,
+                SceneTitles = new List<string> { "FC2-PPV-1517552" }
+            };
+
+            _pass1.Setup(c => c.IsSatisfiedBy(It.IsAny<RemoteMovie>(), searchCriteria))
+                  .Returns(DownloadSpecDecision.Accept);
+
+            var result = Subject.GetSearchDecision(_reports, searchCriteria).ToList();
+
+            Mocker.GetMock<IParsingService>()
+                .Verify(c => c.Map(It.Is<ParsedMovieInfo>(p => p.PrimaryMovieTitle == movie.Title),
+                                    It.IsAny<string>(),
+                                    It.IsAny<int>(),
+                                    searchCriteria),
+                        Times.Once());
+
+            result.Single().Approved.Should().BeTrue();
+        }
+
+        [Test]
         public void should_not_attempt_to_make_decision_if_series_is_unknown()
         {
             GivenSpecifications(_pass1, _pass2, _pass3);
