@@ -90,10 +90,10 @@ namespace NzbDrone.Core.MediaCover
         {
             if (movieId == 0)
             {
-                // Movie isn't in Radarr yet, map via a proxy to circument referrer issues
+                // Movie isn't in Radarr yet, so there is no local cover to serve.
                 foreach (var mediaCover in covers)
                 {
-                    mediaCover.Url = _mediaCoverProxy.RegisterUrl(mediaCover.RemoteUrl);
+                    mediaCover.Url = mediaCover.RemoteUrl;
                 }
             }
             else

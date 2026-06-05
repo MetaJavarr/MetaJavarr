@@ -65,6 +65,25 @@ namespace NzbDrone.Core.Test.MediaCoverTests
         }
 
         [Test]
+        public void should_use_remote_cover_urls_for_movies_not_added_yet()
+        {
+            var covers = new List<MediaCover.MediaCover>
+                {
+                    new MediaCover.MediaCover
+                    {
+                        CoverType = MediaCoverTypes.Poster,
+                        RemoteUrl = "https://images.example.com/poster.jpg"
+                    }
+                };
+
+            Subject.ConvertToLocalUrls(0, covers);
+
+            covers.Single().Url.Should().Be("https://images.example.com/poster.jpg");
+            Mocker.GetMock<IMediaCoverProxy>()
+                  .Verify(v => v.RegisterUrl(It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
         public void should_resize_covers_if_main_downloaded()
         {
             Mocker.GetMock<ICoverExistsSpecification>()
