@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.IndexerSearch.Definitions;
@@ -61,7 +62,13 @@ namespace NzbDrone.Core.Indexers.TorrentPotato
             }
             else
             {
-                requestBuilder.AddQueryParam("search", $"{searchCriteria.Movie.Title} {searchCriteria.Movie.Year}");
+                var queryTitle = searchCriteria.GetQueryTitles(true).FirstOrDefault();
+
+                if (queryTitle.IsNotNullOrWhiteSpace())
+                {
+                    var searchQuery = searchCriteria.ShouldAppendYear ? $"{queryTitle} {searchCriteria.Movie.Year}" : queryTitle;
+                    requestBuilder.AddQueryParam("search", searchQuery);
+                }
             }
 
             yield return new IndexerRequest(requestBuilder.Build());

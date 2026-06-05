@@ -31,6 +31,10 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
                   .Setup(s => s.AutomaticSearchEnabled(true))
                   .Returns(new List<IIndexer> { _mockIndexer.Object });
 
+            Mocker.GetMock<IIndexerFactory>()
+                  .Setup(s => s.InteractiveSearchEnabled(true))
+                  .Returns(new List<IIndexer> { _mockIndexer.Object });
+
             Mocker.GetMock<IMakeDownloadDecision>()
                 .Setup(s => s.GetSearchDecision(It.IsAny<List<Parser.Model.ReleaseInfo>>(), It.IsAny<SearchCriteriaBase>()))
                 .Returns(new List<DownloadDecision>());
@@ -75,6 +79,22 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
             var criteria = allCriteria.OfType<MovieSearchCriteria>().ToList();
 
             criteria.Count.Should().Be(0);
+        }
+
+        [Test]
+        public async Task SearchCriteria_MovieNumber_MovieNumberUsedAsOnlySceneTitle()
+        {
+            _movie.Title = "FC2-1507040 Example Title";
+            _movie.Year = 2020;
+            _movie.MovieMetadata.Value.Number = "FC2-1507040";
+
+            var allCriteria = WatchForSearchCriteria();
+
+            await Subject.MovieSearch(_movie, true, true);
+
+            var criteria = allCriteria.OfType<MovieSearchCriteria>().Single();
+
+            criteria.SceneTitles.Should().Equal("FC2-1507040");
         }
 
         [Test]

@@ -152,16 +152,16 @@ namespace NzbDrone.Core.Indexers.Newznab
                 }
             }
 
-            if (SupportsSearch && searchCriteria.Movie.Year > 0)
+            if (SupportsSearch && searchCriteria.ShouldSearchByText)
             {
                 chain.AddTier();
-                var queryTitles = TextSearchEngine == "raw" ? searchCriteria.SceneTitles : searchCriteria.CleanSceneTitles;
+                var queryTitles = searchCriteria.GetQueryTitles(TextSearchEngine == "raw");
 
                 foreach (var queryTitle in queryTitles)
                 {
                     var searchQuery = queryTitle;
 
-                    if (!Settings.RemoveYear)
+                    if (!Settings.RemoveYear && searchCriteria.ShouldAppendYear)
                     {
                         searchQuery += $" {searchCriteria.Movie.Year}";
                     }

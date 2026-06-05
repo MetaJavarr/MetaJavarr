@@ -20,6 +20,19 @@ namespace NzbDrone.Core.IndexerSearch.Definitions
         public virtual bool InteractiveSearch { get; set; }
 
         public List<string> CleanSceneTitles => SceneTitles.Select(GetCleanSceneTitle).Distinct().ToList();
+        public bool IsMovieNumberSearch => Movie?.MovieMetadata?.Value?.Number.IsNotNullOrWhiteSpace() == true;
+        public bool ShouldSearchByText => SceneTitles?.Any() == true && (IsMovieNumberSearch || Movie.Year > 0);
+        public bool ShouldAppendYear => !IsMovieNumberSearch && Movie.Year > 0;
+
+        public List<string> GetQueryTitles(bool useRawTitles)
+        {
+            if (IsMovieNumberSearch || useRawTitles)
+            {
+                return SceneTitles;
+            }
+
+            return CleanSceneTitles;
+        }
 
         public static string GetCleanSceneTitle(string title)
         {

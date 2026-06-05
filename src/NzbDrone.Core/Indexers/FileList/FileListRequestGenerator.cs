@@ -28,12 +28,12 @@ namespace NzbDrone.Core.Indexers.FileList
             {
                 pageableRequests.Add(GetRequest("search-torrents", $"&type=imdb&query={searchCriteria.Movie.MovieMetadata.Value.ImdbId}"));
             }
-            else if (searchCriteria.Movie.Year > 0)
+            else if (searchCriteria.ShouldSearchByText)
             {
-                foreach (var queryTitle in searchCriteria.CleanSceneTitles)
+                foreach (var queryTitle in searchCriteria.GetQueryTitles(false))
                 {
-                    var titleYearSearchQuery = $"{queryTitle}+{searchCriteria.Movie.Year}";
-                    pageableRequests.Add(GetRequest("search-torrents", $"&type=name&query={titleYearSearchQuery.Trim()}"));
+                    var searchQuery = searchCriteria.ShouldAppendYear ? $"{queryTitle}+{searchCriteria.Movie.Year}" : queryTitle;
+                    pageableRequests.Add(GetRequest("search-torrents", $"&type=name&query={searchQuery.Trim()}"));
                 }
             }
 

@@ -22,9 +22,10 @@ namespace NzbDrone.Core.Indexers.Nyaa
         {
             var pageableRequests = new IndexerPageableRequestChain();
 
-            foreach (var queryTitle in searchCriteria.SceneTitles)
+            foreach (var queryTitle in searchCriteria.GetQueryTitles(true))
             {
-                pageableRequests.Add(GetPagedRequests(PrepareQuery($"{queryTitle} {searchCriteria.Movie.Year}")));
+                var searchQuery = searchCriteria.ShouldAppendYear ? $"{queryTitle} {searchCriteria.Movie.Year}" : queryTitle;
+                pageableRequests.Add(GetPagedRequests(PrepareQuery(searchQuery)));
             }
 
             return pageableRequests;

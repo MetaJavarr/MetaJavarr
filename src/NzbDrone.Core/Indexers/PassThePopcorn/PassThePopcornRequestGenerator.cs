@@ -32,11 +32,12 @@ namespace NzbDrone.Core.Indexers.PassThePopcorn
             {
                 pageableRequests.Add(GetRequest(searchCriteria.Movie.MovieMetadata.Value.ImdbId));
             }
-            else if (searchCriteria.Movie.Year > 0)
+            else if (searchCriteria.ShouldSearchByText)
             {
-                foreach (var queryTitle in searchCriteria.CleanSceneTitles)
+                foreach (var queryTitle in searchCriteria.GetQueryTitles(false))
                 {
-                    pageableRequests.Add(GetRequest($"{queryTitle}&year={searchCriteria.Movie.Year}"));
+                    var searchParameters = searchCriteria.ShouldAppendYear ? $"{queryTitle}&year={searchCriteria.Movie.Year}" : queryTitle;
+                    pageableRequests.Add(GetRequest(searchParameters));
                 }
             }
 

@@ -206,6 +206,34 @@ namespace NzbDrone.Core.Test.IndexerTests.NewznabTests
         }
 
         [Test]
+        public void should_search_movie_number_without_year()
+        {
+            _capabilities.SupportedMovieSearchParameters = new[] { "q" };
+
+            var movieNumberSearchCriteria = new MovieSearchCriteria
+            {
+                Movie = new Movies.Movie
+                {
+                    MovieMetadata = new Movies.MovieMetadata
+                    {
+                        Title = "FC2-1507040 Example Title",
+                        Number = "FC2-1507040",
+                        Year = 2020,
+                        TmdbId = 1836156849
+                    }
+                },
+                SceneTitles = new List<string> { "FC2-1507040" }
+            };
+
+            var results = Subject.GetSearchRequests(movieNumberSearchCriteria);
+
+            var page = results.GetTier(0).First().First();
+
+            page.Url.Query.Should().Contain("q=FC2-1507040");
+            page.Url.Query.Should().NotContain("2020");
+        }
+
+        [Test]
         public void should_encode_raw_title()
         {
             _capabilities.SupportedMovieSearchParameters = new[] { "q" };
