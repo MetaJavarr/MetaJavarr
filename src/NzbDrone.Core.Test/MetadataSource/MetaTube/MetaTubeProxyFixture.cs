@@ -55,6 +55,7 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             metadata.Images.Should().Contain(i => i.CoverType == MediaCoverTypes.Poster);
             metadata.Genres.Should().Contain("Drama");
             metadata.Studio.Should().Be("Example Studio");
+            ShouldHaveDefaultTmdbRating(metadata.Ratings);
 
             var detail = Subject.GetMovieInfo(metadataId).Item1;
 
@@ -65,9 +66,18 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             detail.Images.Should().Contain(i => i.CoverType == MediaCoverTypes.Poster);
             detail.Genres.Should().Contain("Drama");
             detail.Studio.Should().Be("Example Studio");
+            ShouldHaveDefaultTmdbRating(detail.Ratings);
 
             VerifyAuthorizedGet<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=IPZZ-562");
             VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipzz-562");
+        }
+
+        private static void ShouldHaveDefaultTmdbRating(Ratings ratings)
+        {
+            ratings.Tmdb.Should().NotBeNull();
+            ratings.Tmdb.Value.Should().Be(0);
+            ratings.Tmdb.Votes.Should().Be(0);
+            ratings.Tmdb.Type.Should().Be(RatingType.User);
         }
 
         private void GivenSearchResponse()

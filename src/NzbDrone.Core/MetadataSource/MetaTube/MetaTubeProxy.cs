@@ -225,7 +225,13 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
                 Keywords = new List<string>(),
                 Images = MapImages(resource).ToList(),
                 Recommendations = new List<int>(),
-                Ratings = new Ratings(),
+                Ratings = new Ratings
+                {
+                    Tmdb = new RatingChild
+                    {
+                        Type = RatingType.User
+                    }
+                },
                 Status = releaseDate.HasValue && releaseDate.Value <= DateTime.UtcNow ? MovieStatusType.Released : MovieStatusType.Announced,
                 OriginalLanguage = Language.Japanese
             };
