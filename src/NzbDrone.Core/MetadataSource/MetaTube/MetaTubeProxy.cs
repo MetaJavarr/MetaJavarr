@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
@@ -19,6 +20,7 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
     public class MetaTubeProxy : IProvideMovieInfo, ISearchForNewMovie
     {
         private const string WebsitePrefix = "metatube:";
+        private static readonly Regex Fc2PpvIdRegex = new Regex(@"\d{5,}", RegexOptions.Compiled);
 
         private readonly IHttpClient _httpClient;
         private readonly IConfigFileProvider _configFileProvider;
@@ -257,15 +259,63 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
 
         private static IEnumerable<MediaCover.MediaCover> MapImages(MetaTubeMovieResource resource)
         {
-            if (resource.CoverUrl.IsNotNullOrWhiteSpace())
+            var coverUrl = MapImageUrl(resource, resource.CoverUrl);
+            var thumbUrl = MapImageUrl(resource, resource.ThumbUrl);
+
+            if (coverUrl.IsNotNullOrWhiteSpace())
             {
-                yield return new MediaCover.MediaCover(MediaCoverTypes.Poster, resource.CoverUrl);
+                yield return new MediaCover.MediaCover(MediaCoverTypes.Poster, coverUrl);
             }
 
-            if (resource.ThumbUrl.IsNotNullOrWhiteSpace())
+            if (thumbUrl.IsNotNullOrWhiteSpace())
             {
-                yield return new MediaCover.MediaCover(MediaCoverTypes.Fanart, resource.ThumbUrl);
+                yield return new MediaCover.MediaCover(MediaCoverTypes.Fanart, thumbUrl);
             }
+        }
+
+        private static string MapImageUrl(MetaTubeMovieResource resource, string imageUrl)
+        {
+            if (!IsFc2HubStorageImage(resource, imageUrl) || !TryGetFc2PpvId(resource, out var fc2PpvId))
+            {
+                return imageUrl;
+            }
+
+            return $"https://cf.javfree.me/HLIC/FC2-PPV-{fc2PpvId}.jpg";
+        }
+
+        private static bool IsFc2HubStorageImage(MetaTubeMovieResource resource, string imageUrl)
+        {
+            if (!string.Equals(resource.Provider, "fc2hub", StringComparison.OrdinalIgnoreCase) ||
+                !Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri))
+            {
+                return false;
+            }
+
+            return uri.Host.EndsWith(".contents.fc2.com", StringComparison.OrdinalIgnoreCase) ||
+                   uri.Host.Equals("contents.fc2.com", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryGetFc2PpvId(MetaTubeMovieResource resource, out string fc2PpvId)
+        {
+            var candidates = new[] { resource.Number, resource.Id };
+
+            foreach (var candidate in candidates)
+            {
+                if (candidate.IsNullOrWhiteSpace())
+                {
+                    continue;
+                }
+
+                var matches = Fc2PpvIdRegex.Matches(candidate);
+                if (matches.Count > 0)
+                {
+                    fc2PpvId = matches[matches.Count - 1].Value;
+                    return true;
+                }
+            }
+
+            fc2PpvId = null;
+            return false;
         }
 
         private static string BuildTitle(MetaTubeMovieResource resource)

@@ -107,7 +107,7 @@ namespace NzbDrone.Core.MediaCover
 
                     var filePath = GetCoverPath(movieId, mediaCover.CoverType);
 
-                    mediaCover.Url = _configFileProvider.UrlBase + @"/MediaCover/" + movieId + "/" + mediaCover.CoverType.ToString().ToLower() + GetExtension(mediaCover.CoverType);
+                    var localUrl = _configFileProvider.UrlBase + @"/MediaCover/" + movieId + "/" + mediaCover.CoverType.ToString().ToLower() + GetExtension(mediaCover.CoverType);
 
                     DateTime? lastWrite = null;
 
@@ -122,7 +122,15 @@ namespace NzbDrone.Core.MediaCover
 
                     if (lastWrite.HasValue)
                     {
-                        mediaCover.Url += "?lastWrite=" + lastWrite.Value.Ticks;
+                        mediaCover.Url = localUrl + "?lastWrite=" + lastWrite.Value.Ticks;
+                    }
+                    else if (mediaCover.RemoteUrl.IsNotNullOrWhiteSpace())
+                    {
+                        mediaCover.Url = mediaCover.RemoteUrl;
+                    }
+                    else
+                    {
+                        mediaCover.Url = localUrl;
                     }
                 }
             }

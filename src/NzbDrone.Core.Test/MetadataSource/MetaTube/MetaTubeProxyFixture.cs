@@ -74,6 +74,27 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipzz-562");
         }
 
+        [Test]
+        public void should_use_javfree_cover_for_fc2hub_storage_covers()
+        {
+            GivenFc2HubSearchResponse();
+            GivenFc2HubDetailResponse();
+
+            var movie = Subject.SearchForNewMovie("FC2-PPV-3131319").Single();
+            var metadataId = MetaTubeIdMapper.ToMetadataId("fc2hub", "1312343-3131319");
+            const string javfreeCover = "https://cf.javfree.me/HLIC/FC2-PPV-3131319.jpg";
+
+            movie.TmdbId.Should().Be(metadataId);
+            movie.MovieMetadata.Value.Images.Should().OnlyContain(i => i.RemoteUrl == javfreeCover);
+
+            var detail = Subject.GetMovieInfo(metadataId).Item1;
+
+            detail.Images.Should().OnlyContain(i => i.RemoteUrl == javfreeCover);
+
+            VerifyAuthorizedGet<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=FC2-PPV-3131319");
+            VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/fc2hub/1312343-3131319");
+        }
+
         private static string GetMovieNumber(MovieMetadata metadata)
         {
             return metadata.GetType().GetProperty("Number")?.GetValue(metadata) as string;
@@ -131,6 +152,52 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             }";
 
             GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipzz-562", json);
+        }
+
+        private void GivenFc2HubSearchResponse()
+        {
+            const string json = @"{
+              ""data"": [
+                {
+                  ""id"": ""1312343-3131319"",
+                  ""provider"": ""fc2hub"",
+                  ""number"": ""FC2-3131319"",
+                  ""title"": ""Example FC2 Title"",
+                  ""summary"": ""Example summary"",
+                  ""runtime"": 120,
+                  ""release_date"": ""2022-11-18"",
+                  ""cover_url"": ""https://storage72000.contents.fc2.com/file/383/38262697/1668762729.1.png"",
+                  ""thumb_url"": ""https://storage72000.contents.fc2.com/file/383/38262697/1668762729.1.png"",
+                  ""actors"": [],
+                  ""genres"": [],
+                  ""maker"": ""FC2""
+                }
+              ]
+            }";
+
+            GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=FC2-PPV-3131319", json);
+        }
+
+        private void GivenFc2HubDetailResponse()
+        {
+            const string json = @"{
+              ""data"": {
+                ""id"": ""1312343-3131319"",
+                ""provider"": ""fc2hub"",
+                ""number"": ""FC2-3131319"",
+                ""title"": ""Example FC2 Title"",
+                ""summary"": ""Example summary"",
+                ""runtime"": 120,
+                ""release_date"": ""2022-11-18"",
+                ""cover_url"": ""https://storage72000.contents.fc2.com/file/383/38262697/1668762729.1.png"",
+                ""thumb_url"": ""https://storage72000.contents.fc2.com/file/383/38262697/1668762729.1.png"",
+                ""actors"": [],
+                ""genres"": [],
+                ""maker"": ""FC2""
+              }
+            }";
+
+            GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/fc2hub/1312343-3131319", json);
         }
 
         private void GivenResponse<T>(string pathAndQuery, string json)

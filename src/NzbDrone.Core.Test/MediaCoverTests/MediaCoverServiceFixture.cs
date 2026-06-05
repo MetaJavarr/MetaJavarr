@@ -52,16 +52,20 @@ namespace NzbDrone.Core.Test.MediaCoverTests
         }
 
         [Test]
-        public void should_convert_media_urls_to_local_without_time_if_file_doesnt_exist()
+        public void should_use_remote_cover_url_when_local_cover_doesnt_exist()
         {
             var covers = new List<MediaCover.MediaCover>
                 {
-                    new MediaCover.MediaCover { CoverType = MediaCoverTypes.Banner }
+                    new MediaCover.MediaCover
+                    {
+                        CoverType = MediaCoverTypes.Banner,
+                        RemoteUrl = "https://images.example.com/banner.jpg"
+                    }
                 };
 
             Subject.ConvertToLocalUrls(12, covers);
 
-            covers.Single().Url.Should().Be("/MediaCover/12/banner.jpg");
+            covers.Single().Url.Should().Be("https://images.example.com/banner.jpg");
         }
 
         [Test]
