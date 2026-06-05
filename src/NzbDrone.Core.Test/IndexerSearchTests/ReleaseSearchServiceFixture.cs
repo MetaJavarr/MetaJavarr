@@ -82,7 +82,7 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
         }
 
         [Test]
-        public async Task SearchCriteria_MovieNumber_MovieNumberUsedAsOnlySceneTitle()
+        public async Task SearchCriteria_Fc2MovieNumber_Fc2PpvNumberUsedAsOnlySceneTitle()
         {
             _movie.Title = "FC2-1507040 Example Title";
             _movie.Year = 2020;
@@ -94,7 +94,7 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
 
             var criteria = allCriteria.OfType<MovieSearchCriteria>().Single();
 
-            criteria.SceneTitles.Should().Equal("FC2-1507040");
+            criteria.SceneTitles.Should().Equal("FC2-PPV-1507040");
         }
 
         [Test]

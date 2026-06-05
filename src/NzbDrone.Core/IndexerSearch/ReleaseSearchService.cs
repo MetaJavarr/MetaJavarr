@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.Extensions;
@@ -22,6 +23,8 @@ namespace NzbDrone.Core.IndexerSearch
 
     public class ReleaseSearchService : ISearchForReleases
     {
+        private static readonly Regex Fc2NumberRegex = new Regex(@"^FC2-(?<id>\d+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         private readonly IIndexerFactory _indexerFactory;
         private readonly IMakeDownloadDecision _makeDownloadDecision;
         private readonly IMovieService _movieService;
@@ -73,12 +76,31 @@ namespace NzbDrone.Core.IndexerSearch
 
             var queryTranslations = new List<string>
             {
-                movie.MovieMetadata.Value.Number
+                GetSearchNumber(movie)
             };
 
             spec.SceneTitles = queryTranslations.Where(t => t.IsNotNullOrWhiteSpace()).Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
 
             return spec;
+        }
+
+        private static string GetSearchNumber(Movie movie)
+        {
+            var number = movie.MovieMetadata.Value.Number?.Trim();
+
+            if (number.IsNullOrWhiteSpace())
+            {
+                return number;
+            }
+
+            var fc2Match = Fc2NumberRegex.Match(number);
+
+            if (fc2Match.Success)
+            {
+                return $"FC2-PPV-{fc2Match.Groups["id"].Value}";
+            }
+
+            return number;
         }
 
         private async Task<List<DownloadDecision>> Dispatch(Func<IIndexer, Task<IList<ReleaseInfo>>> searchAction, SearchCriteriaBase criteriaBase)
