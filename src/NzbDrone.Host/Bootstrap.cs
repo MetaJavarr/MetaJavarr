@@ -31,6 +31,7 @@ namespace NzbDrone.Host
     public static class Bootstrap
     {
         private static readonly Logger Logger = NzbDroneLogger.GetLogger(typeof(Bootstrap));
+        private const string ConfigSection = "MetaJavarr";
 
         public static readonly List<string> ASSEMBLIES = new List<string>
         {
@@ -103,15 +104,8 @@ namespace NzbDrone.Host
                                     c.AddDummyLogDatabase();
                                 }
                             })
-                            .ConfigureServices(services =>
-                            {
-                                services.Configure<PostgresOptions>(config.GetSection("Radarr:Postgres"));
-                                services.Configure<AppOptions>(config.GetSection("Radarr:App"));
-                                services.Configure<AuthOptions>(config.GetSection("Radarr:Auth"));
-                                services.Configure<ServerOptions>(config.GetSection("Radarr:Server"));
-                                services.Configure<LogOptions>(config.GetSection("Radarr:Log"));
-                                services.Configure<UpdateOptions>(config.GetSection("Radarr:Update"));
-                            }).Build();
+                            .ConfigureServices(services => ConfigureOptions(services, config))
+                            .Build();
 
                         break;
                     }
@@ -138,13 +132,13 @@ namespace NzbDrone.Host
         {
             var config = GetConfiguration(context);
 
-            var bindAddress = config.GetValue<string>($"Radarr:Server:{nameof(ServerOptions.BindAddress)}") ?? config.GetValue(nameof(ConfigFileProvider.BindAddress), "*");
-            var port = config.GetValue<int?>($"Radarr:Server:{nameof(ServerOptions.Port)}") ?? config.GetValue(nameof(ConfigFileProvider.Port), 7878);
-            var sslPort = config.GetValue<int?>($"Radarr:Server:{nameof(ServerOptions.SslPort)}") ?? config.GetValue(nameof(ConfigFileProvider.SslPort), 8787);
-            var enableSsl = config.GetValue<bool?>($"Radarr:Server:{nameof(ServerOptions.EnableSsl)}") ?? config.GetValue(nameof(ConfigFileProvider.EnableSsl), false);
-            var sslCertPath = config.GetValue<string>($"Radarr:Server:{nameof(ServerOptions.SslCertPath)}") ?? config.GetValue<string>(nameof(ConfigFileProvider.SslCertPath));
-            var sslCertPassword = config.GetValue<string>($"Radarr:Server:{nameof(ServerOptions.SslCertPassword)}") ?? config.GetValue<string>(nameof(ConfigFileProvider.SslCertPassword));
-            var logDbEnabled = config.GetValue<bool?>($"Radarr:Log:{nameof(LogOptions.DbEnabled)}") ?? config.GetValue(nameof(ConfigFileProvider.LogDbEnabled), true);
+            var bindAddress = config.GetValue<string>($"{ConfigSection}:Server:{nameof(ServerOptions.BindAddress)}") ?? config.GetValue(nameof(ConfigFileProvider.BindAddress), "*");
+            var port = config.GetValue<int?>($"{ConfigSection}:Server:{nameof(ServerOptions.Port)}") ?? config.GetValue(nameof(ConfigFileProvider.Port), 7878);
+            var sslPort = config.GetValue<int?>($"{ConfigSection}:Server:{nameof(ServerOptions.SslPort)}") ?? config.GetValue(nameof(ConfigFileProvider.SslPort), 8787);
+            var enableSsl = config.GetValue<bool?>($"{ConfigSection}:Server:{nameof(ServerOptions.EnableSsl)}") ?? config.GetValue(nameof(ConfigFileProvider.EnableSsl), false);
+            var sslCertPath = config.GetValue<string>($"{ConfigSection}:Server:{nameof(ServerOptions.SslCertPath)}") ?? config.GetValue<string>(nameof(ConfigFileProvider.SslCertPath));
+            var sslCertPassword = config.GetValue<string>($"{ConfigSection}:Server:{nameof(ServerOptions.SslCertPassword)}") ?? config.GetValue<string>(nameof(ConfigFileProvider.SslCertPassword));
+            var logDbEnabled = config.GetValue<bool?>($"{ConfigSection}:Log:{nameof(LogOptions.DbEnabled)}") ?? config.GetValue(nameof(ConfigFileProvider.LogDbEnabled), true);
 
             var urls = new List<string> { BuildUrl("http", bindAddress, port) };
 
@@ -172,16 +166,7 @@ namespace NzbDrone.Host
                         c.AddDummyLogDatabase();
                     }
                 })
-                .ConfigureServices(services =>
-                {
-                    services.Configure<PostgresOptions>(config.GetSection("Radarr:Postgres"));
-                    services.Configure<PostgresOptions>(config.GetSection("Radarr:Postgres"));
-                    services.Configure<AppOptions>(config.GetSection("Radarr:App"));
-                    services.Configure<AuthOptions>(config.GetSection("Radarr:Auth"));
-                    services.Configure<ServerOptions>(config.GetSection("Radarr:Server"));
-                    services.Configure<LogOptions>(config.GetSection("Radarr:Log"));
-                    services.Configure<UpdateOptions>(config.GetSection("Radarr:Update"));
-                })
+                .ConfigureServices(services => ConfigureOptions(services, config))
                 .ConfigureWebHost(builder =>
                 {
                     builder.UseConfiguration(config);
@@ -203,6 +188,16 @@ namespace NzbDrone.Host
                     });
                     builder.UseStartup<Startup>();
                 });
+        }
+
+        private static void ConfigureOptions(IServiceCollection services, IConfiguration config)
+        {
+            services.Configure<PostgresOptions>(config.GetSection($"{ConfigSection}:Postgres"));
+            services.Configure<AppOptions>(config.GetSection($"{ConfigSection}:App"));
+            services.Configure<AuthOptions>(config.GetSection($"{ConfigSection}:Auth"));
+            services.Configure<ServerOptions>(config.GetSection($"{ConfigSection}:Server"));
+            services.Configure<LogOptions>(config.GetSection($"{ConfigSection}:Log"));
+            services.Configure<UpdateOptions>(config.GetSection($"{ConfigSection}:Update"));
         }
 
         public static ApplicationModes GetApplicationMode(IStartupContext startupContext)
