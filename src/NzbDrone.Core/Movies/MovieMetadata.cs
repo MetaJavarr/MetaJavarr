@@ -40,6 +40,7 @@ namespace NzbDrone.Core.Movies
         public string Website { get; set; }
         public string ImdbId { get; set; }
         public string Title { get; set; }
+        public string Number { get; set; }
         public string CleanTitle { get; set; }
         public string SortTitle { get; set; }
         public MovieStatusType Status { get; set; }

@@ -85,6 +85,35 @@ namespace NzbDrone.Core.Test.MovieTests
         }
 
         [Test]
+        public void should_build_path_from_movie_number_when_available()
+        {
+            var rootFolder = @"C:\Test\Movies";
+            var newMovie = new Movie
+            {
+                TmdbId = 1,
+                RootFolderPath = rootFolder
+            };
+
+            _fakeMovie.Title = "IPZZ-562 Example Title";
+            SetMovieNumber(_fakeMovie, "IPZZ-562");
+
+            GivenValidMovie(newMovie.TmdbId);
+
+            Mocker.GetMock<IBuildFileNames>()
+                  .Setup(s => s.GetMovieFolder(It.IsAny<Movie>(), null))
+                  .Returns<Movie, NamingConfig>((c, n) => GetMovieNumber(c.MovieMetadata.Value) ?? c.Title);
+
+            Mocker.GetMock<IAddMovieValidator>()
+                  .Setup(s => s.Validate(It.IsAny<Movie>()))
+                  .Returns(new ValidationResult());
+
+            var movie = Subject.AddMovie(newMovie);
+
+            movie.Title.Should().Be("IPZZ-562 Example Title");
+            movie.Path.Should().Be(Path.Combine(rootFolder, "IPZZ-562"));
+        }
+
+        [Test]
         public void should_throw_if_movie_validation_fails()
         {
             var newMovie = new Movie
@@ -128,6 +157,16 @@ namespace NzbDrone.Core.Test.MovieTests
             Assert.Throws<ValidationException>(() => Subject.AddMovie(newMovie));
 
             ExceptionVerification.ExpectedErrors(1);
+        }
+
+        private static string GetMovieNumber(MovieMetadata metadata)
+        {
+            return metadata.GetType().GetProperty("Number")?.GetValue(metadata) as string;
+        }
+
+        private static void SetMovieNumber(MovieMetadata metadata, string number)
+        {
+            metadata.GetType().GetProperty("Number")?.SetValue(metadata, number);
         }
     }
 }

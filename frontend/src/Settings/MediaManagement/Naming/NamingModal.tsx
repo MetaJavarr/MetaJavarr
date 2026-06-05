@@ -95,6 +95,8 @@ const movieTokens = [
     example: 'Titel des Films',
     footNotes: '1',
   },
+  { token: '{Movie Number}', example: 'IPZZ-562' },
+  { token: '{Movie CleanNumber}', example: 'IPZZ-562' },
   { token: '{Movie TitleThe}', example: "Movie's Title, The", footNotes: '1' },
   {
     token: '{Movie CleanTitleThe}',

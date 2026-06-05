@@ -35,7 +35,7 @@ namespace NzbDrone.Core.Organizer
 
     public class ValidMovieFormatValidator : PropertyValidator
     {
-        protected override string GetDefaultMessageTemplate() => "Must contain either movie title and release year OR Original Title/Filename";
+        protected override string GetDefaultMessageTemplate() => "Must contain movie title, movie number, or Original Title/Filename";
 
         protected override bool IsValid(PropertyValidatorContext context)
         {
@@ -44,14 +44,14 @@ namespace NzbDrone.Core.Organizer
                 return false;
             }
 
-            return (FileNameBuilder.MovieTitleRegex.IsMatch(value) && FileNameBuilder.ReleaseYearRegex.IsMatch(value) && !FileNameValidation.OriginalTokenRegex.IsMatch(value)) ||
+            return FileNameBuilder.MovieTitleRegex.IsMatch(value) ||
                    FileNameValidation.OriginalTokenRegex.IsMatch(value);
         }
     }
 
     public class ValidMovieFolderFormatValidator : PropertyValidator
     {
-        protected override string GetDefaultMessageTemplate() => "Must contain movie title";
+        protected override string GetDefaultMessageTemplate() => "Must contain movie title or movie number";
 
         protected override bool IsValid(PropertyValidatorContext context)
         {

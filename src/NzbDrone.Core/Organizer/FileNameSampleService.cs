@@ -54,6 +54,7 @@ namespace NzbDrone.Core.Organizer
                 MovieMetadata = new MovieMetadata
                 {
                     Title = "The Movie: Title",
+                    Number = "IPZZ-562",
                     OriginalTitle = "The Original Movie Title",
                     CollectionTitle = "The Movie Collection",
                     CollectionTmdbId = 123654,

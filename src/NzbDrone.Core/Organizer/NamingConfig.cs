@@ -9,8 +9,8 @@ namespace NzbDrone.Core.Organizer
             RenameMovies = true,
             ReplaceIllegalCharacters = true,
             ColonReplacementFormat = ColonReplacementFormat.Smart,
-            MovieFolderFormat = "{Movie CleanTitle}",
-            StandardMovieFormat = "{Movie CleanTitle}",
+            MovieFolderFormat = "{Movie CleanNumber}",
+            StandardMovieFormat = "{Movie CleanNumber}",
         };
 
         public bool RenameMovies { get; set; }

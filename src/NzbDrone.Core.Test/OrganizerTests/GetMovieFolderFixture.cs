@@ -34,6 +34,18 @@ namespace NzbDrone.Core.Test.OrganizerTests
             Subject.GetMovieFolder(movie).Should().Be(expected);
         }
 
+        [TestCase("{Movie Number}", "IPZZ-562")]
+        [TestCase("{Movie CleanNumber}", "IPZZ-562")]
+        public void should_replace_movie_number_tokens(string format, string expected)
+        {
+            _namingConfig.MovieFolderFormat = format;
+
+            var movie = new Movie { Title = "IPZZ-562 Example Title", Year = 2024 };
+            SetMovieNumber(movie.MovieMetadata.Value, "IPZZ-562");
+
+            Subject.GetMovieFolder(movie).Should().Be(expected);
+        }
+
         [TestCase("The Y-Women Collection", "The Y-Women 14", 2005, "{Movie CollectionThe}/{Movie TitleThe} ({Release Year})", "Y-Women Collection, The", "Y-Women 14, The (2005)")]
         [TestCase("A Decade's Worth of Changes", "The First Year", 1980, "{Movie CleanCollectionThe}/{Movie TitleThe} ({Release Year})", "Decades Worth of Changes, A", "First Year, The (1980)")]
         [TestCase(null, "Just a Movie", 1999, "{Movie Title} ({Release Year})", null, "Just a Movie (1999)")]
@@ -57,6 +69,11 @@ namespace NzbDrone.Core.Test.OrganizerTests
                 ? Path.Combine(expectedCollection, expectedTitle)
                 : expectedTitle;
             result.Should().Be(expected);
+        }
+
+        private static void SetMovieNumber(MovieMetadata metadata, string number)
+        {
+            metadata.GetType().GetProperty("Number")?.SetValue(metadata, number);
         }
     }
 }

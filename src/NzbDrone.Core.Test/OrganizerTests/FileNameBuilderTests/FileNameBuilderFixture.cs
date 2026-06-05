@@ -86,14 +86,20 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
         [Test]
         public void default_naming_should_write_jellyfin_jav_movie_layout()
         {
-            _movie.Title = "IPZZ-562";
+            _movie.Title = "IPZZ-562 Example Title";
             _movie.Year = 2024;
+            SetMovieNumber(_movie.MovieMetadata.Value, "IPZZ-562");
 
             var fileName = Subject.BuildFileName(_movie, _movieFile);
             var folder = Subject.GetMovieFolder(_movie);
 
             Path.Combine(folder, fileName + ".ext")
                 .Should().Be(Path.Combine("IPZZ-562", "IPZZ-562.ext"));
+        }
+
+        private static void SetMovieNumber(MovieMetadata metadata, string number)
+        {
+            metadata.GetType().GetProperty("Number")?.SetValue(metadata, number);
         }
 
         [Test]

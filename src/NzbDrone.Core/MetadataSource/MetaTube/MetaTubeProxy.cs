@@ -209,6 +209,7 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
                 TmdbId = metadataId,
                 ImdbId = null,
                 Title = title,
+                Number = resource.Number?.Trim(),
                 OriginalTitle = title,
                 CleanTitle = title.CleanMovieTitle(),
                 SortTitle = MovieTitleNormalizer.Normalize(title, metadataId),
