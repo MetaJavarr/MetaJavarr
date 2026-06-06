@@ -25,8 +25,8 @@ namespace NzbDrone.Core.MediaFiles
 
     public class MovieFileMovingService : IMoveMovieFiles
     {
-        private static readonly Regex MultiFileSourceIdentifierRegex = new Regex(@"(?<identifier>[A-Z][A-Z0-9]{1,9}[-_ ]+(?:[A-Z][A-Z0-9]{1,9}[-_ ]+)?\d{3,}.*)$",
-                                                                                  RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex MultiFilePartNumberRegex = new Regex(@"[A-Z][A-Z0-9]{1,9}[-_ ]+(?:[A-Z][A-Z0-9]{1,9}[-_ ]+)?\d{3,}(?:[-_ ]+part)?[-_ ]+(?<part>\d+)$",
+                                                                            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IUpdateMovieFileService _updateMovieFileService;
         private readonly IBuildFileNames _buildFileNames;
@@ -172,24 +172,28 @@ namespace NzbDrone.Core.MediaFiles
                 return fileName;
             }
 
-            var sourceIdentifier = GetSourceIdentifier(localMovie.Path);
+            var partNumber = GetSourcePartNumber(localMovie.Path);
 
-            if (sourceIdentifier.IsNullOrWhiteSpace() ||
-                fileName.Contains(sourceIdentifier, StringComparison.OrdinalIgnoreCase))
+            if (partNumber.IsNullOrWhiteSpace() ||
+                fileName.EndsWith($"-part{partNumber}", StringComparison.OrdinalIgnoreCase))
             {
                 return fileName;
             }
 
-            return $"{fileName} - {sourceIdentifier}";
+            return $"{fileName}-part{partNumber}";
         }
 
-        private static string GetSourceIdentifier(string path)
+        private static string GetSourcePartNumber(string path)
         {
             var sourceName = Path.GetFileNameWithoutExtension(path);
-            var match = MultiFileSourceIdentifierRegex.Match(sourceName);
-            var identifier = match.Success ? match.Groups["identifier"].Value : sourceName;
+            var match = MultiFilePartNumberRegex.Match(sourceName);
 
-            return FileNameBuilder.CleanFileName(identifier);
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            return int.Parse(match.Groups["part"].Value).ToString();
         }
 
         private void EnsureMovieFolder(MovieFile movieFile, LocalMovie localMovie, string filePath)

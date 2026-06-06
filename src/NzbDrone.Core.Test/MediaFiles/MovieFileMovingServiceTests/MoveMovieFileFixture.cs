@@ -113,7 +113,7 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
         }
 
         [Test]
-        public void should_append_source_identifier_when_moving_other_video_files()
+        public void should_append_jellyfin_part_suffix_when_moving_other_video_files()
         {
             _localMovie.OtherVideoFiles = true;
             _localMovie.Path = @"C:\Test\Unsorted\FC2-PPV-3308060\hhd800.com@FC2-PPV-3308060_1.mp4".AsOsAgnostic();
@@ -122,7 +122,7 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
             Subject.MoveMovieFile(_movieFile, _localMovie);
 
             Mocker.GetMock<IBuildFileNames>()
-                  .Verify(v => v.BuildFilePath(_movie, "File Name - FC2-PPV-3308060_1", ".mp4"), Times.Once());
+                  .Verify(v => v.BuildFilePath(_movie, "File Name-part1", ".mp4"), Times.Once());
         }
     }
 }
