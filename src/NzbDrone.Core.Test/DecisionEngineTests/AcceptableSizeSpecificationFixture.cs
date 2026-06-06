@@ -96,6 +96,19 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
         }
 
         [Test]
+        public void should_allow_oversized_number_match()
+        {
+            _movie.MovieMetadata.Value.Runtime = 5;
+            _remoteMovie.Movie = _movie;
+            _remoteMovie.MovieMatchType = MovieMatchType.Number;
+            _remoteMovie.Release.Size = 14400.Megabytes();
+            _qualityType.MinSize = null;
+            _qualityType.MaxSize = 10;
+
+            Subject.IsSatisfiedBy(_remoteMovie, null).Accepted.Should().BeTrue();
+        }
+
+        [Test]
         public void should_use_110_minutes_if_runtime_is_0()
         {
             _movie.MovieMetadata.Value.Runtime = 0;

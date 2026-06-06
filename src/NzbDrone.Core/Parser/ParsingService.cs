@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Movies;
 using NzbDrone.Core.Parser.Model;
@@ -211,6 +212,13 @@ namespace NzbDrone.Core.Parser
 
         private FindMovieResult TryGetMovieBySearchCriteria(ParsedMovieInfo parsedMovieInfo, string imdbId, int tmdbId, SearchCriteriaBase searchCriteria)
         {
+            var numberMatch = TryGetMovieByNumber(parsedMovieInfo, searchCriteria);
+
+            if (numberMatch != null)
+            {
+                return numberMatch;
+            }
+
             Movie possibleMovie = null;
 
             var possibleTitles = new List<string>
@@ -248,6 +256,21 @@ namespace NzbDrone.Core.Parser
             if (imdbId.IsNotNullOrWhiteSpace() && imdbId == searchCriteria.Movie.ImdbId)
             {
                 return new FindMovieResult(searchCriteria.Movie, MovieMatchType.Id);
+            }
+
+            return null;
+        }
+
+        private static FindMovieResult TryGetMovieByNumber(ParsedMovieInfo parsedMovieInfo, SearchCriteriaBase searchCriteria)
+        {
+            if (searchCriteria?.IsMovieNumberSearch != true)
+            {
+                return null;
+            }
+
+            if (parsedMovieInfo.MovieTitles.Any(title => MovieNumberMatcher.TryGetMatch(title, searchCriteria.Movie, out _)))
+            {
+                return new FindMovieResult(searchCriteria.Movie, MovieMatchType.Number);
             }
 
             return null;

@@ -1,6 +1,7 @@
 using NLog;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 
 namespace NzbDrone.Core.DecisionEngine.Specifications
 {
@@ -19,6 +20,13 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
         public virtual DownloadSpecDecision IsSatisfiedBy(RemoteMovie subject, SearchCriteriaBase searchCriteria)
         {
             _logger.Debug("Checking if report meets quality requirements. {0}", subject.ParsedMovieInfo.Quality);
+
+            if (subject.MovieMatchType == MovieMatchType.Number &&
+                subject.ParsedMovieInfo.Quality.Quality == Quality.Unknown)
+            {
+                _logger.Debug("Allowing unknown quality for exact movie number match");
+                return DownloadSpecDecision.Accept();
+            }
 
             var profile = subject.Movie.QualityProfile;
             var qualityIndex = profile.GetIndex(subject.ParsedMovieInfo.Quality.Quality);

@@ -170,5 +170,24 @@ namespace NzbDrone.Core.Test.ParserTests.ParsingServiceTests
             Subject.Map(_umlautInfo, "", 0, _movieSearchCriteria).Movie.Should().Be(_movieSearchCriteria.Movie);
             Subject.Map(_umlautAltInfo, "", 0, _movieSearchCriteria).Movie.Should().Be(_movieSearchCriteria.Movie);
         }
+
+        [Test]
+        public void should_match_movie_number_from_search_criteria()
+        {
+            _movie.MovieMetadata.Value.Number = "FC2-1517552";
+            _movieSearchCriteria.SceneTitles = new List<string> { "FC2-PPV-1517552" };
+
+            var parsedMovieInfo = new ParsedMovieInfo
+            {
+                MovieTitles = new List<string> { "FC2-PPV-1517552" },
+                Languages = new List<Language> { Language.Japanese }
+            };
+
+            var remoteMovie = Subject.Map(parsedMovieInfo, "", 0, _movieSearchCriteria);
+
+            remoteMovie.Movie.Should().Be(_movieSearchCriteria.Movie);
+            remoteMovie.MovieMatchType.ToString().Should().Be("Number");
+            remoteMovie.MovieRequested.Should().BeTrue();
+        }
     }
 }

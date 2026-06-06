@@ -57,6 +57,12 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
                 }
             }
 
+            if (subject.MovieMatchType == MovieMatchType.Number)
+            {
+                _logger.Debug("Skipping maximum size check for exact movie number match");
+                return DownloadSpecDecision.Accept();
+            }
+
             if (!qualityDefinition.MaxSize.HasValue || qualityDefinition.MaxSize.Value == 0)
             {
                 _logger.Debug("Max size is unlimited, skipping check");

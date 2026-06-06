@@ -148,7 +148,7 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
         }
 
         [Test]
-        public void should_map_unparsable_number_search_release_when_title_contains_scene_title()
+        public void should_map_unparsable_number_search_release_by_movie_number()
         {
             GivenSpecifications(_pass1);
             _reports[0].Title = "+++ FC2-PPV-1517552 えりかちゃん第２弾！！手コキからのフェラごっくん！";
@@ -172,7 +172,7 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
             var result = Subject.GetSearchDecision(_reports, searchCriteria).ToList();
 
             Mocker.GetMock<IParsingService>()
-                .Verify(c => c.Map(It.Is<ParsedMovieInfo>(p => p.PrimaryMovieTitle == movie.Title),
+                .Verify(c => c.Map(It.Is<ParsedMovieInfo>(p => p.PrimaryMovieTitle == "FC2-PPV-1517552"),
                                     It.IsAny<string>(),
                                     It.IsAny<int>(),
                                     searchCriteria),

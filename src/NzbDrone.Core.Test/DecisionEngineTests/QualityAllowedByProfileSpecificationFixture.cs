@@ -63,5 +63,15 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
 
             Subject.IsSatisfiedBy(_remoteMovie, null).Accepted.Should().BeFalse();
         }
+
+        [Test]
+        public void should_allow_unknown_quality_for_number_match()
+        {
+            _remoteMovie.MovieMatchType = MovieMatchType.Number;
+            _remoteMovie.ParsedMovieInfo.Quality.Quality = Quality.Unknown;
+            _remoteMovie.Movie.QualityProfile.Items = Qualities.QualityFixture.GetDefaultQualities(Quality.DVD, Quality.HDTV720p, Quality.Bluray1080p);
+
+            Subject.IsSatisfiedBy(_remoteMovie, null).Accepted.Should().BeTrue();
+        }
     }
 }

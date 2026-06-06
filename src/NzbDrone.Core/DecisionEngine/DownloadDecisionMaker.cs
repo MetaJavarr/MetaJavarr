@@ -9,6 +9,7 @@ using NzbDrone.Core.Configuration;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.DecisionEngine.Specifications;
 using NzbDrone.Core.Download.Aggregation;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
@@ -78,9 +79,9 @@ namespace NzbDrone.Core.DecisionEngine
                 {
                     var parsedMovieInfo = Parser.Parser.ParseMovieTitle(report.Title);
 
-                    if (parsedMovieInfo == null && IsNumberSearchResult(report, searchCriteria))
+                    if (parsedMovieInfo == null && TryGetNumberSearchResult(report, searchCriteria, out var matchedNumber))
                     {
-                        parsedMovieInfo = GetParsedMovieInfoFromNumberSearch(report, searchCriteria);
+                        parsedMovieInfo = GetParsedMovieInfoFromNumberSearch(report, matchedNumber);
                     }
 
                     if (parsedMovieInfo != null && !parsedMovieInfo.PrimaryMovieTitle.IsNullOrWhiteSpace())
@@ -221,23 +222,23 @@ namespace NzbDrone.Core.DecisionEngine
             return null;
         }
 
-        private static bool IsNumberSearchResult(ReleaseInfo report, SearchCriteriaBase searchCriteria)
+        private static bool TryGetNumberSearchResult(ReleaseInfo report, SearchCriteriaBase searchCriteria, out string matchedNumber)
         {
-            if (searchCriteria?.IsMovieNumberSearch != true || searchCriteria.SceneTitles == null)
+            matchedNumber = null;
+
+            if (searchCriteria?.IsMovieNumberSearch != true)
             {
                 return false;
             }
 
-            return searchCriteria.SceneTitles.Any(sceneTitle =>
-                sceneTitle.IsNotNullOrWhiteSpace() &&
-                (report.Title ?? string.Empty).IndexOf(sceneTitle, StringComparison.InvariantCultureIgnoreCase) >= 0);
+            return MovieNumberMatcher.TryGetMatch(report.Title, searchCriteria.Movie, out matchedNumber);
         }
 
-        private static ParsedMovieInfo GetParsedMovieInfoFromNumberSearch(ReleaseInfo report, SearchCriteriaBase searchCriteria)
+        private static ParsedMovieInfo GetParsedMovieInfoFromNumberSearch(ReleaseInfo report, string matchedNumber)
         {
             return new ParsedMovieInfo
             {
-                MovieTitles = new List<string> { searchCriteria.Movie.Title },
+                MovieTitles = new List<string> { matchedNumber },
                 OriginalTitle = report.Title,
                 ReleaseTitle = report.Title,
                 SimpleReleaseTitle = report.Title.SimplifyReleaseTitle(),
