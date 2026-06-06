@@ -24,40 +24,88 @@ namespace NzbDrone.Core.ImportLists.MetaTube
 
         public List<ImportListMovie> Fetch(MetaTubeActressSettings settings)
         {
-            var request = BuildRequest(settings.ActressName);
-            var response = _httpClient.Get<MetaTubeResponse<List<MetaTubeMovieResource>>>(request);
+            var actor = FetchActor(settings);
+            var actorNames = GetActorNames(actor, settings).ToList();
+            var response = _httpClient.Get<MetaTubeResponse<List<MetaTubeMovieResource>>>(BuildMovieSearchRequest(actorNames.First()));
             var resources = response.Resource.Data ?? new List<MetaTubeMovieResource>();
 
             return resources
-                .Where(r => MatchesActress(r, settings.ActressName))
+                .Where(r => MatchesActor(r, actorNames))
                 .Select(MapMovie)
+                .GroupBy(m => m.TmdbId)
+                .Select(g => g.First())
                 .ToList();
         }
 
-        private HttpRequest BuildRequest(string actressName)
+        private MetaTubeActorResource FetchActor(MetaTubeActressSettings settings)
         {
-            var request = new HttpRequestBuilder(_configFileProvider.MetaTubeUrl)
-                .Resource("movies/search")
-                .AddQueryParam("q", actressName)
-                .Accept(HttpAccept.Json)
+            var response = _httpClient.Get<MetaTubeResponse<MetaTubeActorResource>>(BuildActorRequest(settings));
+
+            if (response.Resource.Data == null)
+            {
+                throw new InvalidOperationException("MetaTube returned an empty actor detail response.");
+            }
+
+            return response.Resource.Data;
+        }
+
+        private HttpRequest BuildActorRequest(MetaTubeActressSettings settings)
+        {
+            return BuildRequest($"actors/{settings.Provider.Trim()}/{settings.ActorId.Trim()}").Build();
+        }
+
+        private HttpRequest BuildMovieSearchRequest(string actorName)
+        {
+            return BuildRequest("movies/search")
+                .AddQueryParam("q", actorName)
                 .Build();
+        }
+
+        private HttpRequestBuilder BuildRequest(string resource)
+        {
+            var requestBuilder = new HttpRequestBuilder(_configFileProvider.MetaTubeUrl)
+                .Resource(resource)
+                .Accept(HttpAccept.Json);
 
             var token = _configFileProvider.MetaTubeToken;
 
             if (token.IsNotNullOrWhiteSpace())
             {
-                request.Headers.Set("Authorization", $"Bearer {token}");
+                requestBuilder.SetHeader("Authorization", $"Bearer {token}");
             }
 
-            request.AllowAutoRedirect = true;
+            requestBuilder.AllowAutoRedirect = true;
 
-            return request;
+            return requestBuilder;
         }
 
-        private static bool MatchesActress(MetaTubeMovieResource resource, string actressName)
+        private static IEnumerable<string> GetActorNames(MetaTubeActorResource actor, MetaTubeActressSettings settings)
         {
+            if (actor.Name.IsNotNullOrWhiteSpace())
+            {
+                yield return actor.Name.Trim();
+            }
+
+            if (settings.ActressName.IsNotNullOrWhiteSpace())
+            {
+                yield return settings.ActressName.Trim();
+            }
+
+            foreach (var alias in actor.Aliases ?? Array.Empty<string>())
+            {
+                if (alias.IsNotNullOrWhiteSpace())
+                {
+                    yield return alias.Trim();
+                }
+            }
+        }
+
+        private static bool MatchesActor(MetaTubeMovieResource resource, IEnumerable<string> actorNames)
+        {
+            var names = new HashSet<string>(actorNames, StringComparer.OrdinalIgnoreCase);
+
             return resource.Actors != null &&
-                   resource.Actors.Any(actor => actor.Equals(actressName, StringComparison.OrdinalIgnoreCase));
+                   resource.Actors.Any(actor => actor.IsNotNullOrWhiteSpace() && names.Contains(actor.Trim()));
         }
 
         private static ImportListMovie MapMovie(MetaTubeMovieResource resource)

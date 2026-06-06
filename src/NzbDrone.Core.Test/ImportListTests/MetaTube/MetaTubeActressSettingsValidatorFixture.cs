@@ -9,22 +9,24 @@ namespace NzbDrone.Core.Test.ImportListTests.MetaTube
     public class MetaTubeActressSettingsValidatorFixture : CoreTest
     {
         [Test]
-        public void empty_actress_name_should_not_validate()
+        public void name_only_actor_follow_should_not_validate()
         {
             var setting = new MetaTubeActressSettings
             {
-                ActressName = string.Empty
+                ActressName = "Minami Aizawa"
             };
 
             setting.Validate().IsValid.Should().BeFalse();
         }
 
         [Test]
-        public void actress_name_should_validate()
+        public void identity_based_actor_follow_should_validate()
         {
             var setting = new MetaTubeActressSettings
             {
-                ActressName = "Example Actress"
+                ActressName = "Minami Aizawa",
+                Provider = "av-league",
+                ActorId = "minami-aizawa"
             };
 
             setting.Validate().IsValid.Should().BeTrue();

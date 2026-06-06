@@ -242,19 +242,90 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
             return movie;
         }
 
-        private static IEnumerable<Credit> MapCredits(MetaTubeMovieResource resource)
+        private IEnumerable<Credit> MapCredits(MetaTubeMovieResource resource)
         {
+            var movieIdentity = MetaTubeIdMapper.ToExternalId(resource.Provider, resource.Id);
+
             return (resource.Actors ?? new List<string>())
                 .Where(a => a.IsNotNullOrWhiteSpace())
-                .Select((actor, index) => new Credit
+                .Select((actor, index) => MapActorCredit(movieIdentity, actor.Trim(), index));
+        }
+
+        private Credit MapActorCredit(string movieIdentity, string actorName, int index)
+        {
+            var actor = ResolveActorIdentity(actorName);
+
+            if (actor != null)
+            {
+                var actorIdentity = MetaTubeIdMapper.ToExternalId(actor.Provider, actor.Id);
+
+                return new Credit
                 {
-                    Name = actor,
-                    CreditTmdbId = $"{MetaTubeIdMapper.ToExternalId(resource.Provider, resource.Id)}:actor:{index}",
-                    PersonTmdbId = MetaTubeIdMapper.ToMetadataId("actor", actor),
+                    Name = actorName,
+                    CreditTmdbId = $"{movieIdentity}:actor:{actorIdentity}",
+                    PersonTmdbId = MetaTubeIdMapper.ToMetadataId(actor.Provider, actor.Id),
                     Type = CreditType.Cast,
-                    Character = actor,
-                    Order = index
-                });
+                    Character = actorName,
+                    Order = index,
+                    Images = MapActorImages(actor).ToList()
+                };
+            }
+
+            return new Credit
+            {
+                Name = actorName,
+                CreditTmdbId = $"{movieIdentity}:actor:unresolved:{index}",
+                PersonTmdbId = MetaTubeIdMapper.ToMetadataId("actor", actorName),
+                Type = CreditType.Cast,
+                Character = actorName,
+                Order = index
+            };
+        }
+
+        private MetaTubeActorResource ResolveActorIdentity(string actorName)
+        {
+            try
+            {
+                var request = BuildRequest("actors/search");
+                request.Url = request.Url.AddQueryParam("q", actorName);
+
+                var response = _httpClient.Get<MetaTubeResponse<List<MetaTubeActorResource>>>(request);
+                var actors = response?.Resource?.Data ?? new List<MetaTubeActorResource>();
+
+                return actors.FirstOrDefault(a => IsValidActor(a) && MatchesActorName(a, actorName)) ??
+                       actors.FirstOrDefault(IsValidActor);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, "Unable to resolve MetaTube actor identity for {0}", actorName);
+                return null;
+            }
+        }
+
+        private static bool IsValidActor(MetaTubeActorResource actor)
+        {
+            return actor != null &&
+                   actor.Provider.IsNotNullOrWhiteSpace() &&
+                   actor.Id.IsNotNullOrWhiteSpace();
+        }
+
+        private static bool MatchesActorName(MetaTubeActorResource actor, string actorName)
+        {
+            if (actor.Name.IsNotNullOrWhiteSpace() &&
+                actor.Name.Equals(actorName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return actor.Aliases != null &&
+                   actor.Aliases.Any(a => a.IsNotNullOrWhiteSpace() && a.Equals(actorName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static IEnumerable<MediaCover.MediaCover> MapActorImages(MetaTubeActorResource actor)
+        {
+            return (actor.Images ?? Array.Empty<string>())
+                .Where(i => i.IsNotNullOrWhiteSpace())
+                .Select(i => new MediaCover.MediaCover(MediaCoverTypes.Headshot, i));
         }
 
         private static IEnumerable<MediaCover.MediaCover> MapImages(MetaTubeMovieResource resource)

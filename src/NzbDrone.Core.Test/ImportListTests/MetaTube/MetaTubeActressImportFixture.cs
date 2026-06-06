@@ -33,39 +33,60 @@ namespace NzbDrone.Core.Test.ImportListTests.MetaTube
                 Id = 7,
                 Settings = new MetaTubeActressSettings
                 {
-                    ActressName = "Example Actress"
+                    ActressName = "Minami Aizawa",
+                    Provider = "av-league",
+                    ActorId = "minami-aizawa"
                 }
             };
         }
 
         [Test]
-        public void should_import_only_exact_actress_matches()
+        public void should_import_identity_based_actor_matches()
         {
-            GivenSearchResponse();
+            GivenActorDetailResponse();
+            GivenActorMovieSearchResponse();
 
             var items = Subject.Fetch().Movies;
 
             items.Should().ContainSingle();
-            items.Single().Title.Should().Contain("IPZZ-562");
-            items.Single().TmdbId.Should().Be(MetaTubeIdMapper.ToMetadataId("javbus", "ipzz-562"));
+            items.Single().Title.Should().Contain("IPX-159");
+            items.Single().TmdbId.Should().Be(MetaTubeIdMapper.ToMetadataId("javbus", "ipx-159"));
+
+            VerifyGet<MetaTubeResponse<MetaTubeActorResource>>("/actors/av-league/minami-aizawa");
+            VerifyGet<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=Minami%20Aizawa");
         }
 
-        private void GivenSearchResponse()
+        private void GivenActorDetailResponse()
+        {
+            const string json = @"{
+              ""data"": {
+                ""id"": ""minami-aizawa"",
+                ""provider"": ""av-league"",
+                ""name"": ""Minami Aizawa"",
+                ""aliases"": [""Aizawa Minami""],
+                ""images"": [""https://example.test/minami.jpg""]
+              }
+            }";
+
+            GivenResponse<MetaTubeResponse<MetaTubeActorResource>>("/actors/av-league/minami-aizawa", json);
+        }
+
+        private void GivenActorMovieSearchResponse()
         {
             const string json = @"{
               ""data"": [
                 {
-                  ""id"": ""ipzz-562"",
+                  ""id"": ""ipx-159"",
                   ""provider"": ""javbus"",
-                  ""number"": ""IPZZ-562"",
+                  ""number"": ""IPX-159"",
                   ""title"": ""Matching Movie"",
                   ""release_date"": ""2024-01-02"",
-                  ""actors"": [""Example Actress""]
+                  ""actors"": [""Minami Aizawa""]
                 },
                 {
-                  ""id"": ""ipzz-999"",
+                  ""id"": ""ipx-999"",
                   ""provider"": ""javbus"",
-                  ""number"": ""IPZZ-999"",
+                  ""number"": ""IPX-999"",
                   ""title"": ""Non Matching Movie"",
                   ""release_date"": ""2024-01-03"",
                   ""actors"": [""Different Actress""]
@@ -73,9 +94,22 @@ namespace NzbDrone.Core.Test.ImportListTests.MetaTube
               ]
             }";
 
+            GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=Minami%20Aizawa", json);
+        }
+
+        private void GivenResponse<T>(string pathAndQuery, string json)
+            where T : new()
+        {
             Mocker.GetMock<IHttpClient>()
-                .Setup(c => c.Get<MetaTubeResponse<List<MetaTubeMovieResource>>>(It.Is<HttpRequest>(r => r.Url.FullUri == $"{BaseUrl}/movies/search?q=Example%20Actress")))
-                .Returns<HttpRequest>(r => new HttpResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>(new HttpResponse(r, new HttpHeader { ContentType = HttpAccept.Json.Value }, json)));
+                .Setup(c => c.Get<T>(It.Is<HttpRequest>(r => r.Url.FullUri == $"{BaseUrl}{pathAndQuery}")))
+                .Returns<HttpRequest>(r => new HttpResponse<T>(new HttpResponse(r, new HttpHeader { ContentType = HttpAccept.Json.Value }, json)));
+        }
+
+        private void VerifyGet<T>(string pathAndQuery)
+            where T : new()
+        {
+            Mocker.GetMock<IHttpClient>()
+                .Verify(c => c.Get<T>(It.Is<HttpRequest>(r => r.Url.FullUri == $"{BaseUrl}{pathAndQuery}")), Times.Once());
         }
     }
 }

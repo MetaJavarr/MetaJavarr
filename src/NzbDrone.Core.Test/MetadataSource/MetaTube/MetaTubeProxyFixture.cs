@@ -95,6 +95,29 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/fc2hub/1312343-3131319");
         }
 
+        [Test]
+        public void should_resolve_cast_credit_to_metatube_actor_identity()
+        {
+            GivenIpx159SearchResponse();
+            GivenIpx159DetailResponse();
+            GivenMinamiAizawaActorSearchResponse();
+
+            var movie = Subject.SearchForNewMovie("IPX-159").Single();
+            var metadataId = MetaTubeIdMapper.ToMetadataId("javbus", "ipx-159");
+
+            movie.TmdbId.Should().Be(metadataId);
+
+            var credits = Subject.GetMovieInfo(metadataId).Item2;
+            var credit = credits.Single();
+
+            credit.Name.Should().Be("Minami Aizawa");
+            credit.CreditTmdbId.Should().Be("javbus:ipx-159:actor:av-league:minami-aizawa");
+            credit.PersonTmdbId.Should().Be(MetaTubeIdMapper.ToMetadataId("av-league", "minami-aizawa"));
+            credit.Images.Should().ContainSingle(i => i.RemoteUrl == "https://example.test/minami.jpg");
+
+            VerifyAuthorizedGet<MetaTubeResponse<List<MetaTubeActorResource>>>("/actors/search?q=Minami%20Aizawa");
+        }
+
         private static string GetMovieNumber(MovieMetadata metadata)
         {
             return metadata.GetType().GetProperty("Number")?.GetValue(metadata) as string;
@@ -198,6 +221,69 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             }";
 
             GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/fc2hub/1312343-3131319", json);
+        }
+
+        private void GivenIpx159SearchResponse()
+        {
+            const string json = @"{
+              ""data"": [
+                {
+                  ""id"": ""ipx-159"",
+                  ""provider"": ""javbus"",
+                  ""number"": ""IPX-159"",
+                  ""title"": ""Example IPX Title"",
+                  ""summary"": ""Example summary"",
+                  ""runtime"": 120,
+                  ""release_date"": ""2018-01-02"",
+                  ""cover_url"": ""https://example.test/ipx-cover.jpg"",
+                  ""thumb_url"": ""https://example.test/ipx-thumb.jpg"",
+                  ""actors"": [""Minami Aizawa""],
+                  ""genres"": [""Drama""],
+                  ""maker"": ""Idea Pocket""
+                }
+              ]
+            }";
+
+            GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=IPX-159", json);
+        }
+
+        private void GivenIpx159DetailResponse()
+        {
+            const string json = @"{
+              ""data"": {
+                ""id"": ""ipx-159"",
+                ""provider"": ""javbus"",
+                ""number"": ""IPX-159"",
+                ""title"": ""Example IPX Title"",
+                ""summary"": ""Example summary"",
+                ""runtime"": 120,
+                ""release_date"": ""2018-01-02"",
+                ""cover_url"": ""https://example.test/ipx-cover.jpg"",
+                ""thumb_url"": ""https://example.test/ipx-thumb.jpg"",
+                ""actors"": [""Minami Aizawa""],
+                ""genres"": [""Drama""],
+                ""maker"": ""Idea Pocket""
+              }
+            }";
+
+            GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipx-159", json);
+        }
+
+        private void GivenMinamiAizawaActorSearchResponse()
+        {
+            const string json = @"{
+              ""data"": [
+                {
+                  ""id"": ""minami-aizawa"",
+                  ""provider"": ""av-league"",
+                  ""name"": ""Minami Aizawa"",
+                  ""aliases"": [""Aizawa Minami""],
+                  ""images"": [""https://example.test/minami.jpg""]
+                }
+              ]
+            }";
+
+            GivenResponse<MetaTubeResponse<List<MetaTubeActorResource>>>("/actors/search?q=Minami%20Aizawa", json);
         }
 
         private void GivenResponse<T>(string pathAndQuery, string json)

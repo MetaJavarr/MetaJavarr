@@ -1,14 +1,10 @@
 import classNames from 'classnames';
 import React, { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import Icon from 'Components/Icon';
-import Label from 'Components/Label';
-import Link from 'Components/Link/Link';
 import ConfirmModal from 'Components/Modal/ConfirmModal';
 import MonitorToggleButton from 'Components/MonitorToggleButton';
-import Popover from 'Components/Tooltip/Popover';
 import useModalOpenState from 'Helpers/Hooks/useModalOpenState';
-import { icons, kinds, sizes } from 'Helpers/Props';
+import { kinds } from 'Helpers/Props';
 import MovieHeadshot from 'Movie/MovieHeadshot';
 import EditImportListModal from 'Settings/ImportLists/ImportLists/EditImportListModal';
 import { deleteImportList } from 'Store/Actions/Settings/importLists';
@@ -19,21 +15,21 @@ import styles from '../MovieCreditPoster.css';
 
 export interface MovieCrewPosterProps
   extends Pick<MovieCredit, 'personName' | 'images' | 'job'> {
-  tmdbId: number;
   posterWidth: number;
   posterHeight: number;
+  canFollow: boolean;
   importList?: ImportList;
   onImportListSelect(): void;
 }
 
 function MovieCrewPoster(props: MovieCrewPosterProps) {
   const {
-    tmdbId,
     personName,
     job,
     images = [],
     posterWidth,
     posterHeight,
+    canFollow,
     importList,
     onImportListSelect,
   } = props;
@@ -65,12 +61,16 @@ function MovieCrewPoster(props: MovieCrewPosterProps) {
   }, [setHasPosterError]);
 
   const handleManageImportListPress = useCallback(() => {
+    if (!canFollow && importListId === 0) {
+      return;
+    }
+
     if (importListId === 0) {
       onImportListSelect();
     }
 
     setEditImportListModalOpen();
-  }, [importListId, onImportListSelect, setEditImportListModalOpen]);
+  }, [canFollow, importListId, onImportListSelect, setEditImportListModalOpen]);
 
   const handleDeleteImportListConfirmed = useCallback(() => {
     dispatch(deleteImportList({ id: importListId }));
@@ -105,29 +105,10 @@ function MovieCrewPoster(props: MovieCrewPosterProps) {
             className={styles.monitorToggleButton}
             monitored={monitored}
             size={20}
+            isDisabled={!canFollow && importListId === 0}
             onPress={handleManageImportListPress}
           />
         </div>
-
-        <Label className={styles.controls}>
-          <span className={styles.externalLinks}>
-            <Popover
-              anchor={<Icon name={icons.EXTERNAL_LINK} size={12} />}
-              title={translate('Links')}
-              body={
-                <Link to={`https://www.themoviedb.org/person/${tmdbId}`}>
-                  <Label
-                    className={styles.externalLinkLabel}
-                    kind={kinds.INFO}
-                    size={sizes.LARGE}
-                  >
-                    {translate('TMDb')}
-                  </Label>
-                </Link>
-              }
-            />
-          </span>
-        </Label>
 
         <div style={elementStyle}>
           <MovieHeadshot

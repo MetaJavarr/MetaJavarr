@@ -71,7 +71,7 @@ function MovieCreditPosters(props: MovieCreditPostersProps) {
               component={itemComponent}
               posterWidth={posterWidth}
               posterHeight={posterHeight}
-              tmdbId={credit.personTmdbId}
+              creditTmdbId={credit.creditTmdbId}
               personName={credit.personName}
               images={credit.images}
               job={credit.job}

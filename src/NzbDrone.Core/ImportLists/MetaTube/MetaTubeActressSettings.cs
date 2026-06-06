@@ -9,6 +9,8 @@ namespace NzbDrone.Core.ImportLists.MetaTube
         public MetaTubeActressSettingsValidator()
         {
             RuleFor(c => c.ActressName).NotEmpty();
+            RuleFor(c => c.Provider).NotEmpty();
+            RuleFor(c => c.ActorId).NotEmpty();
         }
     }
 
