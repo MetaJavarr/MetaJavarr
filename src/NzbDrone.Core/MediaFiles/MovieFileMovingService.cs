@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnsureThat;
@@ -24,6 +25,9 @@ namespace NzbDrone.Core.MediaFiles
 
     public class MovieFileMovingService : IMoveMovieFiles
     {
+        private static readonly Regex MultiFileSourceIdentifierRegex = new Regex(@"(?<identifier>[A-Z][A-Z0-9]{1,9}[-_ ]+(?:[A-Z][A-Z0-9]{1,9}[-_ ]+)?\d{3,}.*)$",
+                                                                                  RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         private readonly IUpdateMovieFileService _updateMovieFileService;
         private readonly IBuildFileNames _buildFileNames;
         private readonly IDiskTransferService _diskTransferService;
@@ -72,7 +76,7 @@ namespace NzbDrone.Core.MediaFiles
 
         public MovieFile MoveMovieFile(MovieFile movieFile, LocalMovie localMovie)
         {
-            var newFileName = _buildFileNames.BuildFileName(localMovie.Movie, movieFile, null, localMovie.CustomFormats);
+            var newFileName = BuildFileName(movieFile, localMovie);
             var filePath = _buildFileNames.BuildFilePath(localMovie.Movie, newFileName, Path.GetExtension(localMovie.Path));
 
             EnsureMovieFolder(movieFile, localMovie, filePath);
@@ -84,7 +88,7 @@ namespace NzbDrone.Core.MediaFiles
 
         public MovieFile CopyMovieFile(MovieFile movieFile, LocalMovie localMovie)
         {
-            var newFileName = _buildFileNames.BuildFileName(localMovie.Movie, movieFile, null, localMovie.CustomFormats);
+            var newFileName = BuildFileName(movieFile, localMovie);
             var filePath = _buildFileNames.BuildFilePath(localMovie.Movie, newFileName, Path.GetExtension(localMovie.Path));
 
             EnsureMovieFolder(movieFile, localMovie, filePath);
@@ -157,6 +161,35 @@ namespace NzbDrone.Core.MediaFiles
             _mediaFileAttributeService.SetFilePermissions(destinationFilePath);
 
             return movieFile;
+        }
+
+        private string BuildFileName(MovieFile movieFile, LocalMovie localMovie)
+        {
+            var fileName = _buildFileNames.BuildFileName(localMovie.Movie, movieFile, null, localMovie.CustomFormats);
+
+            if (!localMovie.OtherVideoFiles || fileName.IsNullOrWhiteSpace())
+            {
+                return fileName;
+            }
+
+            var sourceIdentifier = GetSourceIdentifier(localMovie.Path);
+
+            if (sourceIdentifier.IsNullOrWhiteSpace() ||
+                fileName.Contains(sourceIdentifier, StringComparison.OrdinalIgnoreCase))
+            {
+                return fileName;
+            }
+
+            return $"{fileName} - {sourceIdentifier}";
+        }
+
+        private static string GetSourceIdentifier(string path)
+        {
+            var sourceName = Path.GetFileNameWithoutExtension(path);
+            var match = MultiFileSourceIdentifierRegex.Match(sourceName);
+            var identifier = match.Success ? match.Groups["identifier"].Value : sourceName;
+
+            return FileNameBuilder.CleanFileName(identifier);
         }
 
         private void EnsureMovieFolder(MovieFile movieFile, LocalMovie localMovie, string filePath)

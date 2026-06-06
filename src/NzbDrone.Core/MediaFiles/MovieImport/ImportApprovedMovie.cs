@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
@@ -24,6 +25,9 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
 
     public class ImportApprovedMovie : IImportApprovedMovie
     {
+        private static readonly Regex SamePatternMovieFileRegex = new Regex(@"(?<prefix>[A-Z][A-Z0-9]{1,9})[-_ ]+(?:PPV[-_ ]+)?(?<number>\d{3,})",
+                                                                             RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         private readonly IUpgradeMediaFiles _movieFileUpgrader;
         private readonly IMediaFileService _mediaFileService;
         private readonly IExtraService _extraService;
@@ -59,9 +63,15 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
         {
             _logger.Debug("Decisions: {0}", decisions.Count);
 
+            var approvedDecisions = decisions.Where(decision => decision.Approved).ToList();
+            var multiFileMovieIds = approvedDecisions
+                .GroupBy(decision => decision.LocalMovie.Movie.Id)
+                .Where(IsSamePatternMovieFileGroup)
+                .Select(group => group.Key)
+                .ToHashSet();
+
             // I added a null op for the rare case that the quality is null. TODO: find out why that would even happen in the first place.
-            var qualifiedImports = decisions
-                .Where(decision => decision.Approved)
+            var qualifiedImports = approvedDecisions
                 .GroupBy(decision => decision.LocalMovie.Movie.Id)
                 .SelectMany(group => group
                     .OrderByDescending(decision => decision.LocalMovie.Quality ?? new QualityModel { Quality = Quality.Unknown }, new QualityModelComparer(group.First().LocalMovie.Movie.QualityProfile))
@@ -74,15 +84,24 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
             {
                 var localMovie = importDecision.LocalMovie;
                 var oldFiles = new List<DeletedMovieFile>();
+                var movieAlreadyImported = importResults.Select(r => r.ImportDecision.LocalMovie.Movie)
+                                                         .Select(m => m.Id)
+                                                         .Contains(localMovie.Movie.Id);
+                var multiFileImport = multiFileMovieIds.Contains(localMovie.Movie.Id);
 
                 try
                 {
                     // check if already imported
-                    if (importResults.Select(r => r.ImportDecision.LocalMovie.Movie)
-                                         .Select(m => m.Id).Contains(localMovie.Movie.Id))
+                    if (movieAlreadyImported && !multiFileImport)
                     {
                         importResults.Add(new ImportResult(importDecision, "Movie has already been imported"));
                         continue;
+                    }
+
+                    if (movieAlreadyImported && multiFileImport)
+                    {
+                        localMovie.Movie.MovieFile = null;
+                        localMovie.Movie.MovieFileId = 0;
                     }
 
                     var movieFile = new MovieFile();
@@ -206,6 +225,37 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
                                             .Select(d => new ImportResult(d, d.Rejections.Select(r => r.Message).ToArray())));
 
             return importResults;
+        }
+
+        private static bool IsSamePatternMovieFileGroup(IGrouping<int, ImportDecision> group)
+        {
+            var groupDecisions = group.ToList();
+
+            if (groupDecisions.Count <= 1 ||
+                groupDecisions.Any(decision => !decision.LocalMovie.OtherVideoFiles))
+            {
+                return false;
+            }
+
+            var keys = groupDecisions
+                .Select(decision => GetSamePatternMovieFileKey(decision.LocalMovie.Path))
+                .ToList();
+
+            return keys.All(key => key.IsNotNullOrWhiteSpace()) &&
+                   keys.Distinct(StringComparer.OrdinalIgnoreCase).Count() == 1;
+        }
+
+        private static string GetSamePatternMovieFileKey(string path)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            var match = SamePatternMovieFileRegex.Match(fileName);
+
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            return $"{match.Groups["prefix"].Value.ToLowerInvariant()}-{match.Groups["number"].Value}";
         }
 
         private string GetOriginalFilePath(DownloadClientItem downloadClientItem, LocalMovie localMovie)

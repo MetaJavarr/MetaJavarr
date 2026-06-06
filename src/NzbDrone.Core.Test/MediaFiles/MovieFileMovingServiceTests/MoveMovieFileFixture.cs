@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using FizzWare.NBuilder;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
@@ -40,7 +42,7 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
                                                  .Build();
 
             Mocker.GetMock<IBuildFileNames>()
-                  .Setup(s => s.BuildFileName(It.IsAny<Movie>(), It.IsAny<MovieFile>(), null, null))
+                  .Setup(s => s.BuildFileName(It.IsAny<Movie>(), It.IsAny<MovieFile>(), null, It.IsAny<List<CustomFormat>>()))
                   .Returns("File Name");
 
             Mocker.GetMock<IBuildFileNames>()
@@ -108,6 +110,19 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
             Mocker.GetMock<IEventAggregator>()
                   .Verify(s => s.PublishEvent<MovieFolderCreatedEvent>(It.Is<MovieFolderCreatedEvent>(p =>
                       p.MovieFolder.IsNotNullOrWhiteSpace())), Times.Never());
+        }
+
+        [Test]
+        public void should_append_source_identifier_when_moving_other_video_files()
+        {
+            _localMovie.OtherVideoFiles = true;
+            _localMovie.Path = @"C:\Test\Unsorted\FC2-PPV-3308060\hhd800.com@FC2-PPV-3308060_1.mp4".AsOsAgnostic();
+            _movieFile.Path = _localMovie.Path;
+
+            Subject.MoveMovieFile(_movieFile, _localMovie);
+
+            Mocker.GetMock<IBuildFileNames>()
+                  .Verify(v => v.BuildFilePath(_movie, "File Name - FC2-PPV-3308060_1", ".mp4"), Times.Once());
         }
     }
 }

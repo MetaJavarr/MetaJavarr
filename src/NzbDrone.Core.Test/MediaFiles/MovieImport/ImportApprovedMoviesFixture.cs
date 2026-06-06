@@ -129,6 +129,40 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieImport
         }
 
         [Test]
+        public void should_import_all_same_pattern_movie_files()
+        {
+            var movie = _approvedDecisions.First().LocalMovie.Movie;
+            var firstFile = Path.Combine(_downloadClientItem.OutputPath.ToString(), "hhd800.com@FC2-PPV-3308060_1.mp4");
+            var secondFile = Path.Combine(_downloadClientItem.OutputPath.ToString(), "hhd800.com@FC2-PPV-3308060_2.mp4");
+
+            var decisions = new List<ImportDecision>
+            {
+                new ImportDecision(new LocalMovie
+                {
+                    Movie = movie,
+                    Path = firstFile,
+                    Quality = new QualityModel(),
+                    Size = 4.Gigabytes(),
+                    OtherVideoFiles = true
+                }),
+                new ImportDecision(new LocalMovie
+                {
+                    Movie = movie,
+                    Path = secondFile,
+                    Quality = new QualityModel(),
+                    Size = 3.Gigabytes(),
+                    OtherVideoFiles = true
+                })
+            };
+
+            var result = Subject.Import(decisions, true, _downloadClientItem);
+
+            result.Where(i => i.Result == ImportResultType.Imported).Should().HaveCount(2);
+            Mocker.GetMock<IUpgradeMediaFiles>()
+                  .Verify(v => v.UpgradeMovieFile(It.IsAny<MovieFile>(), It.IsAny<LocalMovie>(), It.IsAny<bool>()), Times.Exactly(2));
+        }
+
+        [Test]
         public void should_move_new_downloads()
         {
             Subject.Import(new List<ImportDecision> { _approvedDecisions.First() }, true);
