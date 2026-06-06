@@ -30,7 +30,8 @@ namespace NzbDrone.Core.ImportLists.MetaTube
             var resources = response.Resource.Data ?? new List<MetaTubeMovieResource>();
 
             return resources
-                .Where(r => MatchesActor(r, actorNames))
+                .Select(r => GetActorMatchedMovie(r, actorNames))
+                .Where(r => r != null)
                 .Select(MapMovie)
                 .GroupBy(m => m.TmdbId)
                 .Select(g => g.First())
@@ -59,6 +60,11 @@ namespace NzbDrone.Core.ImportLists.MetaTube
             return BuildRequest("movies/search")
                 .AddQueryParam("q", actorName)
                 .Build();
+        }
+
+        private HttpRequest BuildMovieDetailRequest(MetaTubeMovieResource resource)
+        {
+            return BuildRequest($"movies/{resource.Provider.Trim()}/{resource.Id.Trim()}").Build();
         }
 
         private HttpRequestBuilder BuildRequest(string resource)
@@ -102,10 +108,40 @@ namespace NzbDrone.Core.ImportLists.MetaTube
 
         private static bool MatchesActor(MetaTubeMovieResource resource, IEnumerable<string> actorNames)
         {
+            if (resource == null)
+            {
+                return false;
+            }
+
             var names = new HashSet<string>(actorNames, StringComparer.OrdinalIgnoreCase);
 
             return resource.Actors != null &&
                    resource.Actors.Any(actor => actor.IsNotNullOrWhiteSpace() && names.Contains(actor.Trim()));
+        }
+
+        private MetaTubeMovieResource GetActorMatchedMovie(MetaTubeMovieResource resource, IEnumerable<string> actorNames)
+        {
+            if (HasActorMetadata(resource))
+            {
+                return MatchesActor(resource, actorNames) ? resource : null;
+            }
+
+            var detail = FetchMovie(resource);
+
+            return MatchesActor(detail, actorNames) ? detail : null;
+        }
+
+        private MetaTubeMovieResource FetchMovie(MetaTubeMovieResource resource)
+        {
+            var response = _httpClient.Get<MetaTubeResponse<MetaTubeMovieResource>>(BuildMovieDetailRequest(resource));
+
+            return response.Resource.Data;
+        }
+
+        private static bool HasActorMetadata(MetaTubeMovieResource resource)
+        {
+            return resource.Actors != null &&
+                   resource.Actors.Any(actor => actor.IsNotNullOrWhiteSpace());
         }
 
         private static ImportListMovie MapMovie(MetaTubeMovieResource resource)

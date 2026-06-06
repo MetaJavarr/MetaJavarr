@@ -56,6 +56,24 @@ namespace NzbDrone.Core.Test.ImportListTests.MetaTube
             VerifyGet<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=Minami%20Aizawa");
         }
 
+        [Test]
+        public void should_import_actor_matches_from_movie_details_when_search_results_do_not_include_actors()
+        {
+            GivenActorDetailResponse();
+            GivenActorMovieSearchResponseWithoutActors();
+            GivenMovieDetailResponse("javbus", "ipx-998", "Minami Aizawa");
+            GivenMovieDetailResponse("javbus", "ipx-999", "Different Actress");
+
+            var items = Subject.Fetch().Movies;
+
+            items.Should().ContainSingle();
+            items.Single().Title.Should().Contain("IPX-998");
+            items.Single().TmdbId.Should().Be(MetaTubeIdMapper.ToMetadataId("javbus", "ipx-998"));
+
+            VerifyGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipx-998");
+            VerifyGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipx-999");
+        }
+
         private void GivenActorDetailResponse()
         {
             const string json = @"{
@@ -95,6 +113,48 @@ namespace NzbDrone.Core.Test.ImportListTests.MetaTube
             }";
 
             GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=Minami%20Aizawa", json);
+        }
+
+        private void GivenActorMovieSearchResponseWithoutActors()
+        {
+            const string json = @"{
+              ""data"": [
+                {
+                  ""id"": ""ipx-998"",
+                  ""provider"": ""javbus"",
+                  ""number"": ""IPX-998"",
+                  ""title"": ""Sparse Matching Movie"",
+                  ""release_date"": ""2024-01-02"",
+                  ""actors"": null
+                },
+                {
+                  ""id"": ""ipx-999"",
+                  ""provider"": ""javbus"",
+                  ""number"": ""IPX-999"",
+                  ""title"": ""Sparse Non Matching Movie"",
+                  ""release_date"": ""2024-01-03"",
+                  ""actors"": null
+                }
+              ]
+            }";
+
+            GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=Minami%20Aizawa", json);
+        }
+
+        private void GivenMovieDetailResponse(string provider, string id, string actorName)
+        {
+            var json = $@"{{
+              ""data"": {{
+                ""id"": ""{id}"",
+                ""provider"": ""{provider}"",
+                ""number"": ""{id.ToUpperInvariant()}"",
+                ""title"": ""Detail Movie"",
+                ""release_date"": ""2024-01-02"",
+                ""actors"": [""{actorName}""]
+              }}
+            }}";
+
+            GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>($"/movies/{provider}/{id}", json);
         }
 
         private void GivenResponse<T>(string pathAndQuery, string json)
