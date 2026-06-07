@@ -145,6 +145,8 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
                 {
                     var existing = _movieMetadataService.FindByTmdbId(movie.TmdbId);
 
+                    RememberIdentity(movie);
+
                     return existing ?? GetMovieInfo(movie.TmdbId).Item1;
                 }
 
@@ -430,6 +432,16 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
             }
 
             _metadataIdentities[MetaTubeIdMapper.ToMetadataId(resource.Provider, resource.Id)] = MetaTubeIdMapper.ToExternalId(resource.Provider, resource.Id);
+        }
+
+        private void RememberIdentity(MovieMetadata metadata)
+        {
+            if (metadata == null || !TryParseWebsite(metadata.Website, out var provider, out var id))
+            {
+                return;
+            }
+
+            _metadataIdentities[metadata.TmdbId] = MetaTubeIdMapper.ToExternalId(provider, id);
         }
 
         private bool TryResolveIdentity(int metadataId, out string provider, out string id)

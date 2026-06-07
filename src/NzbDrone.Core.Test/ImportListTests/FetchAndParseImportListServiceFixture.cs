@@ -141,6 +141,28 @@ namespace NzbDrone.Core.Test.ImportListTests
         }
 
         [Test]
+        public void should_preserve_movie_website_when_mapping_list_reports()
+        {
+            const string website = "metatube:javbus:ipx-998";
+            var listMovie = new ImportListMovie
+            {
+                Title = "IPX-998 Example Title",
+                TmdbId = 123,
+                Year = 2023
+            };
+
+            listMovie.MovieMetadata.Value.Website = website;
+
+            var fetchResult = new ImportListFetchResult { Movies = new List<ImportListMovie> { listMovie }, AnyFailure = false };
+            GivenList(1, true, true, fetchResult);
+
+            Subject.Fetch();
+
+            Mocker.GetMock<ISearchForNewMovie>()
+                .Verify(v => v.MapMovieToTmdbMovie(It.Is<MovieMetadata>(m => m.Website == website)), Times.Once());
+        }
+
+        [Test]
         public void should_not_store_movies_if_list_fails()
         {
             var listId = 1;

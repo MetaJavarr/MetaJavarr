@@ -118,6 +118,26 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             VerifyAuthorizedGet<MetaTubeResponse<List<MetaTubeActorResource>>>("/actors/search?q=Minami%20Aizawa");
         }
 
+        [Test]
+        public void should_map_movie_from_metatube_website_identity()
+        {
+            GivenIpx159DetailResponse();
+
+            var metadataId = MetaTubeIdMapper.ToMetadataId("javbus", "ipx-159");
+            var metadata = Subject.MapMovieToTmdbMovie(new MovieMetadata
+            {
+                TmdbId = metadataId,
+                Title = "IPX-159",
+                Website = "metatube:javbus:ipx-159"
+            });
+
+            metadata.Should().NotBeNull();
+            metadata.TmdbId.Should().Be(metadataId);
+            metadata.Title.Should().Be("IPX-159 Example IPX Title");
+
+            VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipx-159");
+        }
+
         private static string GetMovieNumber(MovieMetadata metadata)
         {
             return metadata.GetType().GetProperty("Number")?.GetValue(metadata) as string;
