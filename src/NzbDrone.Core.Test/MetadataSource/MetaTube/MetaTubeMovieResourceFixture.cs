@@ -22,6 +22,7 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
                 ""release_date"": ""2024-01-02"",
                 ""cover_url"": ""https://example.test/cover.jpg"",
                 ""thumb_url"": ""https://example.test/thumb.jpg"",
+                ""preview_images"": [""https://pics.dmm.co.jp/digital/video/ipzz00562/ipzz00562jp-1.jpg""],
                 ""actors"": [""Example Actress""],
                 ""genres"": [""Drama""],
                 ""maker"": ""Example Studio""
@@ -37,6 +38,7 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             resource.Title.Should().Be("Example Title");
             resource.CoverUrl.Should().Be("https://example.test/cover.jpg");
             resource.ThumbUrl.Should().Be("https://example.test/thumb.jpg");
+            resource.PreviewImages.Should().ContainSingle(i => i == "https://pics.dmm.co.jp/digital/video/ipzz00562/ipzz00562jp-1.jpg");
             resource.Actors.Should().ContainSingle(a => a == "Example Actress");
             resource.Genres.Should().ContainSingle(g => g == "Drama");
             resource.Maker.Should().Be("Example Studio");

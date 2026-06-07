@@ -21,6 +21,7 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
     {
         private const string WebsitePrefix = "metatube:";
         private static readonly Regex Fc2PpvIdRegex = new Regex(@"\d{5,}", RegexOptions.Compiled);
+        private static readonly Regex DmmPreviewFileRegex = new Regex(@"^(?<code>.+)jp-\d+\.jpg$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IHttpClient _httpClient;
         private readonly IConfigFileProvider _configFileProvider;
@@ -332,8 +333,8 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
 
         private static IEnumerable<MediaCover.MediaCover> MapImages(MetaTubeMovieResource resource)
         {
-            var coverUrl = MapImageUrl(resource, resource.CoverUrl);
-            var thumbUrl = MapImageUrl(resource, resource.ThumbUrl);
+            var coverUrl = MapPosterUrl(resource);
+            var thumbUrl = MapFanartUrl(resource);
 
             if (coverUrl.IsNotNullOrWhiteSpace())
             {
@@ -346,6 +347,26 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
             }
         }
 
+        private static string MapPosterUrl(MetaTubeMovieResource resource)
+        {
+            if (IsJavBusImage(resource, resource.CoverUrl) && TryGetDmmPosterImageUrl(resource, out var dmmPosterUrl))
+            {
+                return dmmPosterUrl;
+            }
+
+            return MapImageUrl(resource, resource.CoverUrl);
+        }
+
+        private static string MapFanartUrl(MetaTubeMovieResource resource)
+        {
+            if (IsJavBusImage(resource, resource.ThumbUrl) && TryGetDmmPreviewImageUrl(resource, out var dmmPreviewUrl))
+            {
+                return dmmPreviewUrl;
+            }
+
+            return MapImageUrl(resource, resource.ThumbUrl);
+        }
+
         private static string MapImageUrl(MetaTubeMovieResource resource, string imageUrl)
         {
             if (!IsFc2HubStorageImage(resource, imageUrl) || !TryGetFc2PpvId(resource, out var fc2PpvId))
@@ -354,6 +375,59 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
             }
 
             return $"https://cf.javfree.me/HLIC/FC2-PPV-{fc2PpvId}.jpg";
+        }
+
+        private static bool IsJavBusImage(MetaTubeMovieResource resource, string imageUrl)
+        {
+            if (!string.Equals(resource.Provider, "javbus", StringComparison.OrdinalIgnoreCase) ||
+                !Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri))
+            {
+                return false;
+            }
+
+            return uri.Host.Equals("javbus.com", StringComparison.OrdinalIgnoreCase) ||
+                   uri.Host.EndsWith(".javbus.com", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryGetDmmPosterImageUrl(MetaTubeMovieResource resource, out string dmmPosterUrl)
+        {
+            if (TryGetDmmPreviewImageUrl(resource, out var dmmPreviewUrl) &&
+                Uri.TryCreate(dmmPreviewUrl, UriKind.Absolute, out var uri))
+            {
+                var fileName = uri.Segments.LastOrDefault();
+                var match = fileName == null ? null : DmmPreviewFileRegex.Match(fileName);
+
+                if (match is { Success: true })
+                {
+                    var uriBuilder = new UriBuilder(uri)
+                    {
+                        Path = string.Concat(uri.Segments.Take(uri.Segments.Length - 1)) + match.Groups["code"].Value + "pl.jpg",
+                        Query = string.Empty,
+                        Fragment = string.Empty
+                    };
+
+                    dmmPosterUrl = uriBuilder.Uri.AbsoluteUri;
+                    return true;
+                }
+            }
+
+            dmmPosterUrl = null;
+            return false;
+        }
+
+        private static bool TryGetDmmPreviewImageUrl(MetaTubeMovieResource resource, out string dmmPreviewUrl)
+        {
+            dmmPreviewUrl = resource.PreviewImages?
+                .Where(i => i.IsNotNullOrWhiteSpace())
+                .FirstOrDefault(IsDmmImageUrl);
+
+            return dmmPreviewUrl.IsNotNullOrWhiteSpace();
+        }
+
+        private static bool IsDmmImageUrl(string imageUrl)
+        {
+            return Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) &&
+                   uri.Host.Equals("pics.dmm.co.jp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsFc2HubStorageImage(MetaTubeMovieResource resource, string imageUrl)

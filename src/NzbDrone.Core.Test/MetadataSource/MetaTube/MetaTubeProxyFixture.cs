@@ -96,6 +96,30 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
         }
 
         [Test]
+        public void should_use_dmm_images_for_javbus_covers_with_dmm_previews()
+        {
+            GivenJavBusDmmSearchResponse();
+            GivenJavBusDmmDetailResponse();
+
+            var movie = Subject.SearchForNewMovie("IDBD-894").Single();
+            var metadataId = MetaTubeIdMapper.ToMetadataId("javbus", "idbd-894");
+            const string dmmCover = "https://pics.dmm.co.jp/digital/video/idbd00894/idbd00894pl.jpg";
+            const string dmmFanart = "https://pics.dmm.co.jp/digital/video/idbd00894/idbd00894jp-1.jpg";
+
+            movie.TmdbId.Should().Be(metadataId);
+            movie.MovieMetadata.Value.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Poster && i.RemoteUrl == dmmCover);
+            movie.MovieMetadata.Value.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Fanart && i.RemoteUrl == dmmFanart);
+
+            var detail = Subject.GetMovieInfo(metadataId).Item1;
+
+            detail.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Poster && i.RemoteUrl == dmmCover);
+            detail.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Fanart && i.RemoteUrl == dmmFanart);
+
+            VerifyAuthorizedGet<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=IDBD-894");
+            VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/idbd-894");
+        }
+
+        [Test]
         public void should_resolve_cast_credit_to_metatube_actor_identity()
         {
             GivenIpx159SearchResponse();
@@ -241,6 +265,54 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             }";
 
             GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/fc2hub/1312343-3131319", json);
+        }
+
+        private void GivenJavBusDmmSearchResponse()
+        {
+            const string json = @"{
+              ""data"": [
+                {
+                  ""id"": ""idbd-894"",
+                  ""provider"": ""JavBus"",
+                  ""number"": ""IDBD-894"",
+                  ""title"": ""Example JavBus Title"",
+                  ""summary"": ""Example summary"",
+                  ""runtime"": 120,
+                  ""release_date"": ""2023-06-13"",
+                  ""cover_url"": ""https://www.javbus.com/pics/cover/9s92_b.jpg"",
+                  ""thumb_url"": ""https://www.javbus.com/pics/thumb/9s92.jpg"",
+                  ""preview_images"": [""https://pics.dmm.co.jp/digital/video/idbd00894/idbd00894jp-1.jpg""],
+                  ""actors"": [""Minami Aizawa""],
+                  ""genres"": [""Drama""],
+                  ""maker"": ""Idea Pocket""
+                }
+              ]
+            }";
+
+            GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=IDBD-894", json);
+        }
+
+        private void GivenJavBusDmmDetailResponse()
+        {
+            const string json = @"{
+              ""data"": {
+                ""id"": ""idbd-894"",
+                ""provider"": ""JavBus"",
+                ""number"": ""IDBD-894"",
+                ""title"": ""Example JavBus Title"",
+                ""summary"": ""Example summary"",
+                ""runtime"": 120,
+                ""release_date"": ""2023-06-13"",
+                ""cover_url"": ""https://www.javbus.com/pics/cover/9s92_b.jpg"",
+                ""thumb_url"": ""https://www.javbus.com/pics/thumb/9s92.jpg"",
+                ""preview_images"": [""https://pics.dmm.co.jp/digital/video/idbd00894/idbd00894jp-1.jpg""],
+                ""actors"": [""Minami Aizawa""],
+                ""genres"": [""Drama""],
+                ""maker"": ""Idea Pocket""
+              }
+            }";
+
+            GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/idbd-894", json);
         }
 
         private void GivenIpx159SearchResponse()

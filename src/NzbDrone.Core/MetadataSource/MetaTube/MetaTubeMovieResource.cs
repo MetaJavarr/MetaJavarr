@@ -32,6 +32,9 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
         [JsonProperty("thumb_url")]
         public string ThumbUrl { get; set; }
 
+        [JsonProperty("preview_images")]
+        public List<string> PreviewImages { get; set; } = new List<string>();
+
         [JsonProperty("actors")]
         public List<string> Actors { get; set; } = new List<string>();
 
