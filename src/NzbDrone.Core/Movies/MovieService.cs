@@ -6,11 +6,11 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.AutoTagging;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Datastore;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Movies.Events;
-using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.RomanNumerals;
 
