@@ -116,6 +116,8 @@ namespace NzbDrone.Core.Download
                 }
             }
 
+            trackedDownload.RemoteMovie ??= new RemoteMovie();
+            trackedDownload.RemoteMovie.Movie = movie;
             trackedDownload.State = TrackedDownloadState.ImportPending;
         }
 

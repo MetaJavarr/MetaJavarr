@@ -140,6 +140,27 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
         }
 
         [Test]
+        public void should_attach_movie_when_title_matches_after_tracking_failed_to_parse()
+        {
+            var movie = new Movie();
+
+            _trackedDownload.DownloadItem.Category = "jav";
+            _trackedDownload.RemoteMovie = null;
+
+            GivenNoGrabbedHistory();
+
+            Mocker.GetMock<IParsingService>()
+                  .Setup(s => s.GetMovie(_trackedDownload.DownloadItem.Title))
+                  .Returns(movie);
+
+            Subject.Check(_trackedDownload);
+
+            AssertReadyToImport();
+            _trackedDownload.RemoteMovie.Should().NotBeNull();
+            _trackedDownload.RemoteMovie.Movie.Should().Be(movie);
+        }
+
+        [Test]
         public void should_not_process_if_output_path_is_empty()
         {
             _trackedDownload.DownloadItem.OutputPath = default(OsPath);
