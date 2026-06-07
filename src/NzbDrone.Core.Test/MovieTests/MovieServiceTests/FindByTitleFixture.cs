@@ -70,6 +70,20 @@ namespace NzbDrone.Core.Test.MovieTests.MovieServiceTests
         }
 
         [Test]
+        public void should_find_by_movie_number_when_parsed_year_does_not_match()
+        {
+            var movie = Builder<Movie>.CreateNew()
+                                      .With(x => x.Year = 2020)
+                                      .With(x => x.MovieMetadata.Value.Number = "FC2-1517552")
+                                      .With(x => x.MovieMetadata.Value.CleanTitle = "unrelatedtitle")
+                                      .Build();
+
+            var result = Subject.FindByTitle(new List<string> { "FC2-PPV-1517552" }, 1517552, new List<string>(), new List<Movie> { movie });
+
+            result.Should().Be(movie);
+        }
+
+        [Test]
         public void should_find_by_title_using_movie_number_candidates()
         {
             var movie = Builder<Movie>.CreateNew()

@@ -158,7 +158,6 @@ namespace NzbDrone.Core.Movies
             {
                 result = candidates
                     .Where(m => titles.Any(t => MovieNumberMatcher.TryGetMatch(t, m, out _)))
-                    .AllWithYear(year)
                     .ToList();
             }
 
