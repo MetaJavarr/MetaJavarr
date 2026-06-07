@@ -158,6 +158,46 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
         }
 
         [Test]
+        public void should_track_unparsed_download_using_title_match()
+        {
+            var movie = new Movie { Id = 7 };
+
+            Mocker.GetMock<IParsingService>()
+                  .Setup(s => s.GetMovie("FC2-PPV-1507040"))
+                  .Returns(movie);
+
+            Mocker.GetMock<IHistoryService>()
+                  .Setup(s => s.FindByDownloadId("35239"))
+                  .Returns(new List<MovieHistory>());
+
+            var client = new DownloadClientDefinition()
+            {
+                Id = 1,
+                Protocol = DownloadProtocol.Torrent
+            };
+
+            var item = new DownloadClientItem()
+            {
+                Title = "FC2-PPV-1507040",
+                DownloadId = "35239",
+                Status = DownloadItemStatus.Downloading,
+                DownloadClientInfo = new DownloadClientItemClientInfo
+                {
+                    Protocol = client.Protocol,
+                    Id = client.Id,
+                    Name = client.Name
+                }
+            };
+
+            var trackedDownload = Subject.TrackDownload(client, item);
+
+            trackedDownload.Should().NotBeNull();
+            trackedDownload.State.Should().Be(TrackedDownloadState.Downloading);
+            trackedDownload.RemoteMovie.Should().NotBeNull();
+            trackedDownload.RemoteMovie.Movie.Should().Be(movie);
+        }
+
+        [Test]
         public void should_unmap_tracked_download_if_movie_deleted()
         {
             GivenDownloadHistory();

@@ -14,6 +14,7 @@ using NzbDrone.Core.Movies;
 using NzbDrone.Core.Movies.Events;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 
 namespace NzbDrone.Core.Download.TrackedDownloads
 {
@@ -174,6 +175,20 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                     }
                 }
 
+                if (trackedDownload.RemoteMovie?.Movie == null)
+                {
+                    var movie = _parsingService.GetMovie(trackedDownload.DownloadItem.Title);
+
+                    if (movie != null)
+                    {
+                        trackedDownload.RemoteMovie = new RemoteMovie
+                        {
+                            Movie = movie,
+                            ParsedMovieInfo = parsedMovieInfo ?? GetFallbackParsedMovieInfo(trackedDownload.DownloadItem.Title)
+                        };
+                    }
+                }
+
                 if (trackedDownload.RemoteMovie != null)
                 {
                     _aggregationService.Augment(trackedDownload.RemoteMovie);
@@ -204,6 +219,18 @@ namespace NzbDrone.Core.Download.TrackedDownloads
 
             _cache.Set(trackedDownload.DownloadItem.DownloadId, trackedDownload);
             return trackedDownload;
+        }
+
+        private static ParsedMovieInfo GetFallbackParsedMovieInfo(string title)
+        {
+            return new ParsedMovieInfo
+            {
+                MovieTitles = new List<string> { title },
+                OriginalTitle = title,
+                ReleaseTitle = title,
+                SimpleReleaseTitle = title,
+                Quality = new QualityModel(Quality.Unknown)
+            };
         }
 
         public List<TrackedDownload> GetTrackedDownloads()
