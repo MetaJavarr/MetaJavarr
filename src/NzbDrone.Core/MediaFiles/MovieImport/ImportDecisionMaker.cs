@@ -10,6 +10,7 @@ using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.MediaFiles.MovieImport.Aggregation;
 using NzbDrone.Core.Movies;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 
 namespace NzbDrone.Core.MediaFiles.MovieImport
 {
@@ -78,6 +79,11 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
             if (downloadClientItem != null)
             {
                 downloadClientItemInfo = Parser.Parser.ParseMovieTitle(downloadClientItem.Title);
+
+                if (downloadClientItemInfo == null && movie != null)
+                {
+                    downloadClientItemInfo = GetFallbackParsedMovieInfo(downloadClientItem.Title);
+                }
             }
 
             var nonSampleVideoFileCount = GetNonSampleVideoFileCount(newFiles, movie.MovieMetadata);
@@ -197,6 +203,20 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
             }
 
             return null;
+        }
+
+        private static ParsedMovieInfo GetFallbackParsedMovieInfo(string title)
+        {
+            title = title.IsNullOrWhiteSpace() ? "Unknown" : title;
+
+            return new ParsedMovieInfo
+            {
+                MovieTitles = new List<string> { title },
+                OriginalTitle = title,
+                ReleaseTitle = title,
+                SimpleReleaseTitle = title,
+                Quality = new QualityModel(Quality.Unknown)
+            };
         }
 
         private int GetNonSampleVideoFileCount(List<string> videoFiles, MovieMetadata movie)

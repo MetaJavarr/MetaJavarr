@@ -157,6 +157,43 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieImport
         }
 
         [Test]
+        public void should_use_download_title_fallback_for_unparsed_known_download_import()
+        {
+            GivenSpecifications(_pass1);
+            GivenVideoFiles(new[]
+            {
+                @"C:\Test\Unsorted\FC2-PPV-2857899\T66Y.COM@FC2-PPV-2857899-part1.mp4".AsOsAgnostic()
+            });
+
+            var downloadClientItem = Builder<DownloadClientItem>.CreateNew()
+                                                                .With(d => d.Title = "FC2-PPV-2857899")
+                                                                .Build();
+
+            LocalMovie capturedLocalMovie = null;
+
+            Mocker.GetMock<IAggregationService>()
+                  .Setup(s => s.Augment(It.IsAny<LocalMovie>(), downloadClientItem))
+                  .Callback<LocalMovie, DownloadClientItem>((localMovie, _) =>
+                  {
+                      capturedLocalMovie = localMovie;
+
+                      if (localMovie.DownloadClientMovieInfo == null)
+                      {
+                          throw new AugmentingFailedException("Unable to parse movie info from path: {0}", localMovie.Path);
+                      }
+
+                      localMovie.Movie = _movie;
+                  });
+
+            var result = Subject.GetImportDecisions(_videoFiles, _movie, downloadClientItem, null, true);
+
+            result.Single().Approved.Should().BeTrue();
+            capturedLocalMovie.DownloadClientMovieInfo.Should().NotBeNull();
+            capturedLocalMovie.DownloadClientMovieInfo.ReleaseTitle.Should().Be("FC2-PPV-2857899");
+            capturedLocalMovie.DownloadClientMovieInfo.Quality.Quality.Should().Be(Quality.Unknown);
+        }
+
+        [Test]
         public void should_have_same_number_of_rejections_as_specs_that_failed()
         {
             GivenAugmentationSuccess();
