@@ -60,5 +60,25 @@ namespace NzbDrone.Core.Test.QueueTests
 
             distinct.Should().HaveCount(1);
         }
+
+        [Test]
+        public void should_map_matched_download_without_parsed_movie_info()
+        {
+            var movie = new Movie();
+
+            _trackedDownloads.First().RemoteMovie = new RemoteMovie
+            {
+                Movie = movie
+            };
+
+            var act = () => Subject.Handle(new TrackedDownloadRefreshedEvent(_trackedDownloads));
+
+            act.Should().NotThrow();
+
+            var queue = Subject.GetQueue();
+
+            queue.Should().HaveCount(1);
+            queue.First().Movie.Should().Be(movie);
+        }
     }
 }
