@@ -2,14 +2,6 @@
 
 MetaJavarr is a Radarr fork for JAV libraries. It uses MetaTube as the only metadata provider, supports actress-follow import lists, integrates with Prowlarr and qBittorrent, and imports media into Jellyfin-compatible movie libraries.
 
-[![Build Status](https://dev.azure.com/Radarr/Radarr/_apis/build/status/Radarr.Radarr?branchName=develop)](https://dev.azure.com/Radarr/Radarr/_build/latest?definitionId=1&branchName=develop)
-[![Translation status](https://translate.servarr.com/widget/servarr/radarr/svg-badge.svg)](https://translate.servarr.com/engage/servarr/?utm_source=widget)
-[![Docker Pulls](https://img.shields.io/docker/pulls/linuxserver/radarr.svg)](https://wiki.servarr.com/radarr/installation/docker)
-![Github Downloads](https://img.shields.io/github/downloads/Radarr/Radarr/total.svg)
-[![Backers on Open Collective](https://opencollective.com/Radarr/backers/badge.svg)](#backers)
-[![Sponsors on Open Collective](https://opencollective.com/Radarr/sponsors/badge.svg)](#sponsors)
-[![Mega Sponsors on Open Collective](https://opencollective.com/Radarr/megasponsors/badge.svg)](#mega-sponsors)
-
 ## Major Features Include
 
 * Adding new movies with lots of information, such as trailers, ratings, etc.
@@ -32,58 +24,20 @@ MetaJavarr is a Radarr fork for JAV libraries. It uses MetaTube as the only meta
 
 ## Support
 
-[![Wiki](https://img.shields.io/badge/servarr-wiki-181717.svg?maxAge=60)](https://wiki.servarr.com/radarr)
-[![Discord](https://img.shields.io/badge/discord-chat-7289DA.svg?maxAge=60)](https://radarr.video/discord)
+Use this repository's GitHub issues for MetaJavarr bugs and feature requests.
 
-Note: GitHub Issues are for Bugs and Feature Requests Only
+- [Issues](https://github.com/MetaJavarr/MetaJavarr/issues)
+- [Contributing](CONTRIBUTING.md)
 
-[![GitHub - Bugs and Feature Requests Only](https://img.shields.io/badge/github-issues-red.svg?maxAge=60)](https://github.com/Radarr/Radarr/issues)
+## Credits
 
-## Contributors & Developers
+MetaJavarr is a hard fork of Radarr. Thanks to the Radarr and Servarr contributors for the original project foundation.
 
-[API Documentation](https://radarr.video/docs/api/)
-
-This project exists thanks to all the people who contribute.
-- [Contribute (GitHub)](CONTRIBUTING.md)
-- [Contribution (Wiki Article)](https://wiki.servarr.com/radarr/contributing)
-
-[![Contributors List](https://opencollective.com/Radarr/contributors.svg?width=890&button=false)](https://github.com/Radarr/Radarr/graphs/contributors)
-
-## Backers
-
-Thank you to all our backers! 🙏 [Become a backer](https://opencollective.com/Radarr#backer)
-
-[![Backers List](https://opencollective.com/Radarr/backers.svg?width=890)](https://opencollective.com/Radarr#backer)
-
-## Sponsors
-
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [Become a sponsor](https://opencollective.com/Radarr#sponsor)
-
-[![Sponsors List](https://opencollective.com/Radarr/sponsors.svg?width=890)](https://opencollective.com/Radarr#sponsor)
-
-## Mega Sponsors
-
-[![Mega Sponsors List](https://opencollective.com/Radarr/tiers/mega-sponsor.svg?width=890)](https://opencollective.com/Radarr#mega-sponsor)
-
-## JetBrains
-
-Thank you to [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.png" alt="JetBrains" width="96">](http://www.jetbrains.com/) for providing us with free licenses to their great tools.
-
-* [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/ReSharper_icon.png" alt="ReSharper" width="32"> ReSharper](http://www.jetbrains.com/resharper/)
-* [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/WebStorm_icon.png" alt="WebStorm" width="32"> WebStorm](http://www.jetbrains.com/webstorm/)
-* [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/Rider_icon.png" alt="Rider" width="32"> Rider](http://www.jetbrains.com/rider/)
-* [<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/dotTrace_icon.png" alt="dotTrace" width="32"> dotTrace](http://www.jetbrains.com/dottrace/)
-
-## DigitalOcean
-
-This project is also supported by DigitalOcean
-<p>
-  <a href="https://www.digitalocean.com/">
-    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/SVG/DO_Logo_horizontal_blue.svg" width="201px">
-  </a>
-</p>
+- [Radarr](https://github.com/Radarr/Radarr)
+- [Radarr contributors](https://github.com/Radarr/Radarr/graphs/contributors)
+- [MetaJavarr contributors](https://github.com/MetaJavarr/MetaJavarr/graphs/contributors)
 
 ### License
 
 * [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-* Copyright 2010-2025
+* Copyright 2010-2025 Radarr contributors and MetaJavarr contributors
