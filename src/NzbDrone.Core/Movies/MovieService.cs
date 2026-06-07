@@ -10,6 +10,7 @@ using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Movies.Events;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.RomanNumerals;
 
@@ -153,6 +154,14 @@ namespace NzbDrone.Core.Movies
                     .AllWithYear(year).ToList();
             }
 
+            if (result == null || result.Count == 0)
+            {
+                result = candidates
+                    .Where(m => titles.Any(t => MovieNumberMatcher.TryGetMatch(t, m, out _)))
+                    .AllWithYear(year)
+                    .ToList();
+            }
+
             return ReturnSingleMovieOrThrow(result.ToList());
         }
 
@@ -182,7 +191,15 @@ namespace NzbDrone.Core.Movies
                 lookupTitles.AddRange(new List<string> { cleanTitle, arabicTitle, romanTitle });
             }
 
-            return _movieRepository.FindByTitles(lookupTitles);
+            var numberCandidates = titles
+                .SelectMany(MovieNumberMatcher.GetNumberCandidatesFromTitle)
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)
+                .ToList();
+
+            var candidates = _movieRepository.FindByTitles(lookupTitles);
+            candidates.AddRange(_movieRepository.FindByMovieNumbers(numberCandidates));
+
+            return candidates.DistinctBy(x => x.Id).ToList();
         }
 
         public Movie FindByImdbId(string imdbid)

@@ -10,6 +10,9 @@ namespace NzbDrone.Core.IndexerSearch
     public static class MovieNumberMatcher
     {
         private static readonly Regex Fc2NumberRegex = new Regex(@"^FC2-(?<id>\d+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex Fc2TitleNumberRegex = new Regex(@"\bFC2(?:[-_. ]?PPV)?[-_. ]?(?<id>\d{4,8})(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex JavNumberRegex = new Regex(@"^(?<prefix>[A-Z]{2,6})-(?<id>\d+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex JavTitleNumberRegex = new Regex(@"(?<prefix>[A-Z]{2,6})[-_. ]?0*(?<id>\d{2,7})(?!\d)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public static string GetSearchNumber(Movie movie)
         {
@@ -45,9 +48,22 @@ namespace NzbDrone.Core.IndexerSearch
                 return false;
             }
 
-            foreach (var candidate in GetNumberCandidates(movieNumber))
+            var movieNumberCandidates = GetNumberCandidates(movieNumber).ToList();
+
+            foreach (var candidate in movieNumberCandidates)
             {
                 if (title.IndexOf(candidate, StringComparison.InvariantCultureIgnoreCase) >= 0)
+                {
+                    matchedNumber = candidate;
+                    return true;
+                }
+            }
+
+            var titleNumberCandidates = GetNumberCandidatesFromTitle(title).ToHashSet(StringComparer.InvariantCultureIgnoreCase);
+
+            foreach (var candidate in movieNumberCandidates)
+            {
+                if (titleNumberCandidates.Contains(candidate))
                 {
                     matchedNumber = candidate;
                     return true;
@@ -57,7 +73,47 @@ namespace NzbDrone.Core.IndexerSearch
             return false;
         }
 
-        private static IEnumerable<string> GetNumberCandidates(string number)
+        public static IEnumerable<string> GetNumberCandidatesFromTitle(string title)
+        {
+            if (title.IsNullOrWhiteSpace())
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            var candidates = new List<string>();
+
+            foreach (Match match in Fc2TitleNumberRegex.Matches(title))
+            {
+                candidates.AddRange(GetNumberCandidates($"FC2-{match.Groups["id"].Value}"));
+            }
+
+            foreach (Match match in JavTitleNumberRegex.Matches(title))
+            {
+                var prefix = match.Groups["prefix"].Value.ToUpperInvariant();
+
+                if (prefix == "PPV")
+                {
+                    continue;
+                }
+
+                var rawId = match.Groups["id"].Value;
+                var trimmedId = rawId.TrimStart('0');
+
+                if (trimmedId.IsNullOrWhiteSpace())
+                {
+                    trimmedId = "0";
+                }
+
+                candidates.Add($"{prefix}-{rawId}");
+                candidates.Add($"{prefix}-{trimmedId}");
+            }
+
+            return candidates
+                .Where(candidate => candidate.IsNotNullOrWhiteSpace())
+                .Distinct(StringComparer.InvariantCultureIgnoreCase);
+        }
+
+        public static IEnumerable<string> GetNumberCandidates(string number)
         {
             number = number?.Trim();
 
@@ -66,9 +122,30 @@ namespace NzbDrone.Core.IndexerSearch
                 return Enumerable.Empty<string>();
             }
 
-            return new[] { number, GetSearchNumber(number) }
+            var normalizedNumber = NormalizeJavNumber(number);
+
+            return new[] { number, normalizedNumber, GetSearchNumber(normalizedNumber) }
                 .Where(candidate => candidate.IsNotNullOrWhiteSpace())
                 .Distinct(StringComparer.InvariantCultureIgnoreCase);
+        }
+
+        private static string NormalizeJavNumber(string number)
+        {
+            var match = JavNumberRegex.Match(number);
+
+            if (!match.Success)
+            {
+                return number;
+            }
+
+            var id = match.Groups["id"].Value.TrimStart('0');
+
+            if (id.IsNullOrWhiteSpace())
+            {
+                id = "0";
+            }
+
+            return $"{match.Groups["prefix"].Value.ToUpperInvariant()}-{id}";
         }
     }
 }

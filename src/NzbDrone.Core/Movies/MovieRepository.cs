@@ -16,6 +16,7 @@ namespace NzbDrone.Core.Movies
     {
         bool MoviePathExists(string path);
         List<Movie> FindByTitles(List<string> titles);
+        List<Movie> FindByMovieNumbers(List<string> numbers);
         Movie FindByImdbId(string imdbid);
         Movie FindByTmdbId(int tmdbid);
         List<Movie> FindByTmdbId(List<int> tmdbids);
@@ -142,6 +143,30 @@ namespace NzbDrone.Core.Movies
             results.AddRange(FindByTransTitles(distinct));
 
             return results.DistinctBy(x => x.Id).ToList();
+        }
+
+        public List<Movie> FindByMovieNumbers(List<string> numbers)
+        {
+            var distinct = numbers.Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
+
+            if (!distinct.Any())
+            {
+                return new List<Movie>();
+            }
+
+            var movieDictionary = new Dictionary<int, Movie>();
+
+            var builder = new SqlBuilder(_database.DatabaseType)
+                .Join<Movie, QualityProfile>((m, p) => m.QualityProfileId == p.Id)
+                .Join<Movie, MovieMetadata>((m, p) => m.MovieMetadataId == p.Id)
+                .LeftJoin<Movie, MovieFile>((m, f) => m.Id == f.MovieId)
+                .Where<MovieMetadata>(x => distinct.Contains(x.Number));
+
+            _ = _database.QueryJoined<Movie, MovieMetadata, QualityProfile, MovieFile>(
+                builder,
+                (movie, metadata, qualityProfile, file) => Map(movieDictionary, movie, metadata, qualityProfile, file));
+
+            return movieDictionary.Values.ToList();
         }
 
         // This is a bit of a hack, but if you try to combine / rationalise these then
