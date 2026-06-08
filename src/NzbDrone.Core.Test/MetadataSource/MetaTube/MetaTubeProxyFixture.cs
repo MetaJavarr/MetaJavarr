@@ -120,6 +120,30 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
         }
 
         [Test]
+        public void should_derive_dmm_images_for_javbus_covers_without_dmm_previews()
+        {
+            GivenJavBusSearchResponseWithoutDmmPreviews();
+            GivenJavBusDetailResponseWithoutDmmPreviews();
+
+            var movie = Subject.SearchForNewMovie("IPZZ-623").Single();
+            var metadataId = MetaTubeIdMapper.ToMetadataId("javbus", "ipzz-623");
+            const string dmmCover = "https://pics.dmm.co.jp/digital/video/ipzz00623/ipzz00623pl.jpg";
+            const string dmmFanart = "https://pics.dmm.co.jp/digital/video/ipzz00623/ipzz00623jp-1.jpg";
+
+            movie.TmdbId.Should().Be(metadataId);
+            movie.MovieMetadata.Value.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Poster && i.RemoteUrl == dmmCover);
+            movie.MovieMetadata.Value.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Fanart && i.RemoteUrl == dmmFanart);
+
+            var detail = Subject.GetMovieInfo(metadataId).Item1;
+
+            detail.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Poster && i.RemoteUrl == dmmCover);
+            detail.Images.Should().ContainSingle(i => i.CoverType == MediaCoverTypes.Fanart && i.RemoteUrl == dmmFanart);
+
+            VerifyAuthorizedGet<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=IPZZ-623");
+            VerifyAuthorizedGet<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipzz-623");
+        }
+
+        [Test]
         public void should_resolve_cast_credit_to_metatube_actor_identity()
         {
             GivenIpx159SearchResponse();
@@ -313,6 +337,54 @@ namespace NzbDrone.Core.Test.MetadataSource.MetaTube
             }";
 
             GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/idbd-894", json);
+        }
+
+        private void GivenJavBusSearchResponseWithoutDmmPreviews()
+        {
+            const string json = @"{
+              ""data"": [
+                {
+                  ""id"": ""ipzz-623"",
+                  ""provider"": ""javbus"",
+                  ""number"": ""IPZZ-623"",
+                  ""title"": ""Example JavBus Title"",
+                  ""summary"": ""Example summary"",
+                  ""runtime"": 120,
+                  ""release_date"": ""2024-10-01"",
+                  ""cover_url"": ""https://www.javbus.com/pics/cover/bklh_b.jpg"",
+                  ""thumb_url"": ""https://www.javbus.com/pics/thumb/bklh.jpg"",
+                  ""preview_images"": [],
+                  ""actors"": [""Example Actress""],
+                  ""genres"": [""Drama""],
+                  ""maker"": ""Idea Pocket""
+                }
+              ]
+            }";
+
+            GivenResponse<MetaTubeResponse<List<MetaTubeMovieResource>>>("/movies/search?q=IPZZ-623", json);
+        }
+
+        private void GivenJavBusDetailResponseWithoutDmmPreviews()
+        {
+            const string json = @"{
+              ""data"": {
+                ""id"": ""ipzz-623"",
+                ""provider"": ""javbus"",
+                ""number"": ""IPZZ-623"",
+                ""title"": ""Example JavBus Title"",
+                ""summary"": ""Example summary"",
+                ""runtime"": 120,
+                ""release_date"": ""2024-10-01"",
+                ""cover_url"": ""https://www.javbus.com/pics/cover/bklh_b.jpg"",
+                ""thumb_url"": ""https://www.javbus.com/pics/thumb/bklh.jpg"",
+                ""preview_images"": [],
+                ""actors"": [""Example Actress""],
+                ""genres"": [""Drama""],
+                ""maker"": ""Idea Pocket""
+              }
+            }";
+
+            GivenResponse<MetaTubeResponse<MetaTubeMovieResource>>("/movies/javbus/ipzz-623", json);
         }
 
         private void GivenIpx159SearchResponse()

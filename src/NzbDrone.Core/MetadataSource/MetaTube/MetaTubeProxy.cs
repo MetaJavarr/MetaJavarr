@@ -21,6 +21,7 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
     {
         private const string WebsitePrefix = "metatube:";
         private static readonly Regex Fc2PpvIdRegex = new Regex(@"\d{5,}", RegexOptions.Compiled);
+        private static readonly Regex DmmMovieNumberRegex = new Regex(@"^(?<prefix>[a-z]+)-?(?<number>\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex DmmPreviewFileRegex = new Regex(@"^(?<code>.+)jp-\d+\.jpg$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IHttpClient _httpClient;
@@ -411,6 +412,12 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
                 }
             }
 
+            if (TryGetDmmImageCode(resource, out var dmmImageCode))
+            {
+                dmmPosterUrl = $"https://pics.dmm.co.jp/digital/video/{dmmImageCode}/{dmmImageCode}pl.jpg";
+                return true;
+            }
+
             dmmPosterUrl = null;
             return false;
         }
@@ -421,13 +428,49 @@ namespace NzbDrone.Core.MetadataSource.MetaTube
                 .Where(i => i.IsNotNullOrWhiteSpace())
                 .FirstOrDefault(IsDmmImageUrl);
 
-            return dmmPreviewUrl.IsNotNullOrWhiteSpace();
+            if (dmmPreviewUrl.IsNotNullOrWhiteSpace())
+            {
+                return true;
+            }
+
+            if (TryGetDmmImageCode(resource, out var dmmImageCode))
+            {
+                dmmPreviewUrl = $"https://pics.dmm.co.jp/digital/video/{dmmImageCode}/{dmmImageCode}jp-1.jpg";
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsDmmImageUrl(string imageUrl)
         {
             return Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) &&
                    uri.Host.Equals("pics.dmm.co.jp", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryGetDmmImageCode(MetaTubeMovieResource resource, out string dmmImageCode)
+        {
+            var candidates = new[] { resource.Number, resource.Id };
+
+            foreach (var candidate in candidates)
+            {
+                if (candidate.IsNullOrWhiteSpace())
+                {
+                    continue;
+                }
+
+                var match = DmmMovieNumberRegex.Match(candidate.Trim());
+
+                if (match.Success)
+                {
+                    dmmImageCode = match.Groups["prefix"].Value.ToLowerInvariant() +
+                                   match.Groups["number"].Value.PadLeft(5, '0');
+                    return true;
+                }
+            }
+
+            dmmImageCode = null;
+            return false;
         }
 
         private static bool IsFc2HubStorageImage(MetaTubeMovieResource resource, string imageUrl)
