@@ -25,7 +25,7 @@ namespace NzbDrone.Core.MediaFiles
 
     public class MovieFileMovingService : IMoveMovieFiles
     {
-        private static readonly Regex MultiFilePartNumberRegex = new Regex(@"[A-Z][A-Z0-9]{1,9}[-_ ]+(?:[A-Z][A-Z0-9]{1,9}[-_ ]+)?\d{3,}(?:[-_ ]+part)?[-_ ]+(?<part>\d+)$",
+        private static readonly Regex MultiFilePartNumberRegex = new Regex(@"[A-Z][A-Z0-9]{1,9}[-_. ]*(?:PPV[-_. ]*)?\d{3,}.*?[-_. ]+(?:p(?:ar)?t)?(?<part>\d{1,3})$",
                                                                             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IUpdateMovieFileService _updateMovieFileService;

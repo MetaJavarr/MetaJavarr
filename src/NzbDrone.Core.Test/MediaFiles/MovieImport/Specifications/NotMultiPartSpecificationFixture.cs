@@ -1,9 +1,11 @@
 using System.Linq;
+using FizzWare.NBuilder;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.MediaFiles.MovieImport.Specifications;
+using NzbDrone.Core.Movies;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Test.Common;
@@ -86,6 +88,28 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieImport.Specifications
                   .Returns(filePaths);
 
             Subject.IsSatisfiedBy(_localMovie, null).Accepted.Should().BeFalse();
+        }
+
+        [Test]
+        public void should_accept_jav_multi_part_files_matching_known_movie()
+        {
+            var paths = new[]
+            {
+                @"C:\Test\Downloaded\ipvr00167pl\fbzip.com@ipvr00167.part1.mp4",
+                @"C:\Test\Downloaded\ipvr00167pl\fbzip.com@ipvr00167.part2.mp4"
+            };
+
+            _localMovie.Path = paths.First().AsOsAgnostic();
+            _localMovie.Movie = Builder<Movie>.CreateNew().Build();
+            _localMovie.Movie.MovieMetadata.Value.Number = "IPVR-167";
+
+            var filePaths = paths.Select(x => x.AsOsAgnostic()).ToArray();
+
+            Mocker.GetMock<IDiskProvider>()
+                  .Setup(s => s.GetFiles(_localMovie.Path.GetParentPath(), false))
+                  .Returns(filePaths);
+
+            Subject.IsSatisfiedBy(_localMovie, null).Accepted.Should().BeTrue();
         }
 
         [TestCase(new object[]

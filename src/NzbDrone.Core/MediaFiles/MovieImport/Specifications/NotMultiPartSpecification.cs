@@ -4,6 +4,7 @@ using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Download;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.Parser.Model;
 
 namespace NzbDrone.Core.MediaFiles.MovieImport.Specifications
@@ -35,6 +36,11 @@ namespace NzbDrone.Core.MediaFiles.MovieImport.Specifications
                 {
                     if (filesInDirectory.Count(file => regex.Replace(file, "") == regex.Replace(localMovie.Path, "")) > 1)
                     {
+                        if (MovieNumberMatcher.TryGetMatch(localMovie.Path, localMovie.Movie, out _))
+                        {
+                            return ImportSpecDecision.Accept();
+                        }
+
                         _logger.Debug("Rejected Multi-Part File: {0}", localMovie.Path);
 
                         return ImportSpecDecision.Reject(ImportRejectionReason.MultiPartMovie, "File is suspected multi-part file, Radarr doesn't support this");

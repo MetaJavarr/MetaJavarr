@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Extras;
 using NzbDrone.Core.History;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.MediaFiles.Commands;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Commands;
@@ -25,9 +25,6 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
 
     public class ImportApprovedMovie : IImportApprovedMovie
     {
-        private static readonly Regex SamePatternMovieFileRegex = new Regex(@"(?<prefix>[A-Z][A-Z0-9]{1,9})[-_ ]+(?:PPV[-_ ]+)?(?<number>\d{3,})",
-                                                                             RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
         private readonly IUpgradeMediaFiles _movieFileUpgrader;
         private readonly IMediaFileService _mediaFileService;
         private readonly IExtraService _extraService;
@@ -248,14 +245,14 @@ namespace NzbDrone.Core.MediaFiles.MovieImport
         private static string GetSamePatternMovieFileKey(string path)
         {
             var fileName = Path.GetFileNameWithoutExtension(path);
-            var match = SamePatternMovieFileRegex.Match(fileName);
+            var number = MovieNumberMatcher.GetNumberCandidatesFromTitle(fileName).FirstOrDefault();
 
-            if (!match.Success)
+            if (number.IsNullOrWhiteSpace())
             {
                 return null;
             }
 
-            return $"{match.Groups["prefix"].Value.ToLowerInvariant()}-{match.Groups["number"].Value}";
+            return MovieNumberMatcher.GetNumberCandidates(number).Last().ToLowerInvariant();
         }
 
         private string GetOriginalFilePath(DownloadClientItem downloadClientItem, LocalMovie localMovie)

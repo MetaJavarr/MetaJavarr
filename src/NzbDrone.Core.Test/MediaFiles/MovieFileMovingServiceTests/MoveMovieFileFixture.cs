@@ -124,5 +124,18 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
             Mocker.GetMock<IBuildFileNames>()
                   .Verify(v => v.BuildFilePath(_movie, "File Name-part1", ".mp4"), Times.Once());
         }
+
+        [Test]
+        public void should_append_jellyfin_part_suffix_when_source_has_site_prefix_and_dot_part()
+        {
+            _localMovie.OtherVideoFiles = true;
+            _localMovie.Path = @"C:\Test\Unsorted\ipvr00167pl\fbzip.com@ipvr00167.part2.mp4".AsOsAgnostic();
+            _movieFile.Path = _localMovie.Path;
+
+            Subject.MoveMovieFile(_movieFile, _localMovie);
+
+            Mocker.GetMock<IBuildFileNames>()
+                  .Verify(v => v.BuildFilePath(_movie, "File Name-part2", ".mp4"), Times.Once());
+        }
     }
 }
