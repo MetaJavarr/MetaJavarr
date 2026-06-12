@@ -21,7 +21,7 @@ WORKDIR /app/metajavarr
 
 COPY _artifacts/linux-x64/net8.0/Radarr/ ./
 
-RUN chmod +x /app/metajavarr/Radarr
+RUN chmod +x /app/metajavarr/Radarr /app/metajavarr/ffprobe
 
 USER 1000:1000
 

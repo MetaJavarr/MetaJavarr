@@ -22,6 +22,26 @@ namespace NzbDrone.App.Test
             runtimeUser.Should().Be("USER 1000:1000");
         }
 
+        [Test]
+        public void image_should_make_ffprobe_executable_before_switching_to_runtime_user()
+        {
+            var dockerfile = File.ReadAllLines(GetRepositoryFile("Dockerfile"))
+                .Select(line => line.Trim())
+                .ToList();
+
+            var runtimeUserIndex = dockerfile.FindIndex(line => line.StartsWith("USER ", StringComparison.Ordinal));
+
+            runtimeUserIndex.Should().BeGreaterThan(-1);
+
+            dockerfile
+                .Take(runtimeUserIndex)
+                .Should()
+                .Contain(line => line.StartsWith("RUN ", StringComparison.Ordinal) &&
+                                 line.Contains("chmod", StringComparison.Ordinal) &&
+                                 line.Contains("/app/metajavarr/ffprobe", StringComparison.Ordinal),
+                    "ffprobe must be executable by UID 1000 so completed downloads can be media-probed and imported");
+        }
+
         private static string GetRepositoryFile(string fileName)
         {
             var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
