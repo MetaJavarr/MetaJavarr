@@ -117,6 +117,7 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
         {
             _localMovie.OtherVideoFiles = true;
             _localMovie.Path = @"C:\Test\Unsorted\FC2-PPV-3308060\hhd800.com@FC2-PPV-3308060_1.mp4".AsOsAgnostic();
+            _movie.MovieMetadata.Value.Number = "FC2-3308060";
             _movieFile.Path = _localMovie.Path;
 
             Subject.MoveMovieFile(_movieFile, _localMovie);
@@ -130,12 +131,41 @@ namespace NzbDrone.Core.Test.MediaFiles.MovieFileMovingServiceTests
         {
             _localMovie.OtherVideoFiles = true;
             _localMovie.Path = @"C:\Test\Unsorted\ipvr00167pl\fbzip.com@ipvr00167.part2.mp4".AsOsAgnostic();
+            _movie.MovieMetadata.Value.Number = "IPVR-167";
             _movieFile.Path = _localMovie.Path;
 
             Subject.MoveMovieFile(_movieFile, _localMovie);
 
             Mocker.GetMock<IBuildFileNames>()
                   .Verify(v => v.BuildFilePath(_movie, "File Name-part2", ".mp4"), Times.Once());
+        }
+
+        [Test]
+        public void should_not_append_jellyfin_part_suffix_from_tracker_site_prefix_number()
+        {
+            _localMovie.OtherVideoFiles = true;
+            _localMovie.Path = @"C:\Test\Unsorted\IPZZ-562\hhd800.com@IPZZ-562.mp4".AsOsAgnostic();
+            _movie.MovieMetadata.Value.Number = "IPZZ-562";
+            _movieFile.Path = _localMovie.Path;
+
+            Subject.MoveMovieFile(_movieFile, _localMovie);
+
+            Mocker.GetMock<IBuildFileNames>()
+                  .Verify(v => v.BuildFilePath(_movie, "File Name", ".mp4"), Times.Once());
+        }
+
+        [Test]
+        public void should_not_append_jellyfin_part_suffix_when_part_matches_movie_number()
+        {
+            _localMovie.OtherVideoFiles = true;
+            _localMovie.Path = @"C:\Test\Unsorted\IPZZ-562\hhd800.com@IPZZ-562-part562.mp4".AsOsAgnostic();
+            _movie.MovieMetadata.Value.Number = "IPZZ-562";
+            _movieFile.Path = _localMovie.Path;
+
+            Subject.MoveMovieFile(_movieFile, _localMovie);
+
+            Mocker.GetMock<IBuildFileNames>()
+                  .Verify(v => v.BuildFilePath(_movie, "File Name", ".mp4"), Times.Once());
         }
     }
 }

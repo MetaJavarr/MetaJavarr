@@ -1,11 +1,13 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.MediaFiles.MovieImport;
 using NzbDrone.Core.Messaging.Events;
@@ -25,8 +27,13 @@ namespace NzbDrone.Core.MediaFiles
 
     public class MovieFileMovingService : IMoveMovieFiles
     {
-        private static readonly Regex MultiFilePartNumberRegex = new Regex(@"[A-Z][A-Z0-9]{1,9}[-_. ]*(?:PPV[-_. ]*)?\d{3,}.*?[-_. ]+(?:p(?:ar)?t)?(?<part>\d{1,3})$",
-                                                                            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex[] MultiFilePartNumberRegex = new[]
+        {
+            new Regex(@"(?:^|[^A-Z0-9])FC2(?:[-_. ]?PPV)?[-_. ]?(?<id>\d{4,8})[-_. ]+(?:p(?:ar)?t)?(?<part>\d{1,3})$",
+                      RegexOptions.Compiled | RegexOptions.IgnoreCase),
+            new Regex(@"(?:^|[^A-Z0-9])(?<prefix>[A-Z]{2,6})[-_. ]*0*(?<id>\d{2,7})[-_. ]+(?:p(?:ar)?t)?(?<part>\d{1,3})$",
+                      RegexOptions.Compiled | RegexOptions.IgnoreCase)
+        };
 
         private readonly IUpdateMovieFileService _updateMovieFileService;
         private readonly IBuildFileNames _buildFileNames;
@@ -172,7 +179,7 @@ namespace NzbDrone.Core.MediaFiles
                 return fileName;
             }
 
-            var partNumber = GetSourcePartNumber(localMovie.Path);
+            var partNumber = GetSourcePartNumber(localMovie.Path, localMovie.Movie);
 
             if (partNumber.IsNullOrWhiteSpace() ||
                 fileName.EndsWith($"-part{partNumber}", StringComparison.OrdinalIgnoreCase))
@@ -183,17 +190,70 @@ namespace NzbDrone.Core.MediaFiles
             return $"{fileName}-part{partNumber}";
         }
 
-        private static string GetSourcePartNumber(string path)
+        private static string GetSourcePartNumber(string path, Movie movie)
         {
             var sourceName = Path.GetFileNameWithoutExtension(path);
-            var match = MultiFilePartNumberRegex.Match(sourceName);
+            var movieNumber = movie?.MovieMetadata?.Value?.Number;
 
-            if (!match.Success)
+            if (sourceName.IsNullOrWhiteSpace() || movieNumber.IsNullOrWhiteSpace())
             {
                 return null;
             }
 
-            return int.Parse(match.Groups["part"].Value).ToString();
+            var movieNumberCandidates = MovieNumberMatcher.GetNumberCandidates(movieNumber).ToHashSet(StringComparer.InvariantCultureIgnoreCase);
+
+            foreach (var regex in MultiFilePartNumberRegex)
+            {
+                var match = regex.Match(sourceName);
+
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var sourceNumber = GetSourceMovieNumber(match);
+
+                if (!MovieNumberMatcher.GetNumberCandidates(sourceNumber).Any(movieNumberCandidates.Contains))
+                {
+                    continue;
+                }
+
+                var partNumber = NormalizeNumericSuffix(match.Groups["part"].Value);
+                var sourceId = NormalizeNumericSuffix(match.Groups["id"].Value);
+
+                if (partNumber == sourceId)
+                {
+                    return null;
+                }
+
+                return partNumber;
+            }
+
+            return null;
+        }
+
+        private static string GetSourceMovieNumber(Match match)
+        {
+            var id = NormalizeNumericSuffix(match.Groups["id"].Value);
+
+            if (match.Groups["prefix"].Success)
+            {
+                return $"{match.Groups["prefix"].Value}-{id}";
+            }
+
+            return $"FC2-{id}";
+        }
+
+        private static string NormalizeNumericSuffix(string value)
+        {
+            var normalized = value.TrimStart('0');
+
+            if (normalized.IsNullOrWhiteSpace())
+            {
+                return "0";
+            }
+
+            return normalized;
         }
 
         private void EnsureMovieFolder(MovieFile movieFile, LocalMovie localMovie, string filePath)
